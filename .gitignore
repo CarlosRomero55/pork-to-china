@@ -1,6 +1,8 @@
 # --- Secretos (NUNCA subir) ---
-.env
+# Cualquier variante: .env, .env.txt, .env.local, prod.env, .env.bak...
+.env*
 *.env
+*.env.txt
 !.env.example
 
 # --- Entorno virtual y caché de Python ---
