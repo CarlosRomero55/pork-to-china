@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 5 – Limpieza y armonización (corte vertical con Comtrade)
-- **Paso:** 5.1 completado → Carlos corre `.\transform.ps1`
+- **Paso:** 5.1 cerrado y verificado en el PC (cifras idénticas, 37/37 pytest) → siguiente: Fase 6
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-13 · 5.1b · transform.ps1 OK en el PC: migración 001 aplicada, 11.066 filas en silver, reporte idéntico al del entorno de pruebas, 37/37 pytest
 - 2026-11-13 · 5.1 · clean.py (parseo, solo totales, peso 0 → NULL, outliers USD/kg por IQR-log en HS×año), harmonize.py (última versión de bronze → silver.trade_flow; fuentes comtrade / comtrade_mirror; cuarentena de países desconocidos), migrate.py + migración 001 (25% de China al cerdo de Canadá). Probado con los 27 JSON reales del PC: 11.066 filas, 0 cuarentena, 120 outliers marcados, idempotente. Conciliación 2018–2024: peso 0,992 · valor 1,037. Vista previa 2024→2025 (espejo, t): EE. UU. −26,7%, Canadá −28,6%, Brasil −33,8%, España −5,4%, Dinamarca +1,8%, Reino Unido +13,0%. Bug evitado: "Out of sort memory" al ordenar JSON grandes → lectura en 2 pasos. 37/37 pytest
 - 2026-11-13 · 4.2c · Corrida real con espejo: MIRROR 2018–2025 completos (12/12) y 2026 hasta septiembre (9/12); 6.067 registros espejo, 11.066 en total en bronze. getDa confirma: China publicó en Comtrade solo hasta 2024-12 (el hueco es de la fuente, no nuestro); Ecuador hasta 2026-03, pero sin exportaciones de cerdo en 2025–2026; 2025 de Ecuador no figura en getDa (verificar). Reintento ante 429 funcionó en real. Incidente: copias al PC en paralelo dejaron archivos viejos; corregido y verificado (30/30 archivos idénticos al repo)
 - 2026-11-13 · 4.2b · Extracción espejo (12 exportadores → China, flujo X, 1 consulta por año para todos) + consulta getDa de disponibilidad; 23/23 pytest
@@ -82,4 +83,4 @@
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
 
 ## Siguiente paso
-**Paso 5.1:** Carlos corre `.\transform.ps1`. Luego: Fase 6 (validación formal y reporte antes/después) o volver a 4.3 (USDA PSD, FAOSTAT, aranceles WTO).
+**Fase 6 – Validación y calidad** (recomendado) o volver a 4.3 (USDA PSD, FAOSTAT, aranceles OMC).
