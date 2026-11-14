@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4 – Extracción a bronze
-- **Paso:** 4.1 de 3 completado → siguiente 4.2 (`.\extract.ps1` en el PC de Carlos: primera llamada real a Comtrade)
+- **Paso:** 4.2b completado (espejo + disponibilidad) → Carlos vuelve a correr `.\extract.ps1`
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -23,6 +23,8 @@
 - 2026-11-13 · 1.1 · Estructura de carpetas, .gitignore, .env.example, requirements.txt (19 librerías fijadas), src/config.py, setup.ps1, README borrador
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
+- 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-13 · 4.2b · Extracción espejo (12 exportadores → China, flujo X, 1 consulta por año para todos) + consulta getDa de disponibilidad; 23/23 pytest
 - 2026-11-13 · 4.1 · src/extract_comtrade.py: CHN importaciones + ECU exportaciones, mensual 2018→hoy, 12 HS, todos los socios, solo totales (partner2/customs/mot = 0); 18 consultas por corrida completa (cupo gratuito 500/día); caché en data/raw/comtrade con ventana de revisión de 2 años; reintentos exponenciales ante 429/5xx; 401/403 falla sin reintentar. 8 pruebas con API simulada (21/21 en total)
 - 2026-11-13 · 3.2 · (pendiente confirmar salida de db_check.ps1 en el PC)
 - 2026-11-13 · 3.1 · src/db.py (engine etl/bi, track_batch, save_raw_response con hash, upsert_df idempotente, last_period), src/logging_setup.py (consola + logs/pipeline.log rotativo), tests/test_db.py; 13/13 pytest. Bug detectado por la autoprueba: CLIENT_FOUND_ROWS cuenta 1 en filas sin cambios → fórmula corregida
@@ -51,6 +53,7 @@
 | 2026-11-13 | Upsert con INSERT … ON DUPLICATE KEY UPDATE (no pandas.to_sql); el registro del lote usa transacciones propias para que un fallo quede auditado | — |
 | 2026-11-13 | Comtrade primero; todos los socios; doble caché (bronze + data/raw); ventana de revisión de 2 años | — |
 | 2026-11-13 | Llaves de Comtrade y USDA FAS (api.data.gov) obtenidas por Carlos; viven solo en su .env | — |
+| 2026-11-13 | Datos espejo (mirror) para cubrir 2025–2026 mientras China no publique en Comtrade; se concilian contra el directo 2018–2024 (FOB vs CIF, desfase de fechas) | ADR-008 (pendiente) |
 | 2026-11-13 | Cortes de análisis: mar-2025 (EE. UU.), sep-2025 (UE, provisional), dic-2025 (UE, definitivo) | — |
 
 ## Hallazgos clave de la Fase 0
@@ -72,4 +75,4 @@
 - [ ] ADR-003, ADR-004 y ADR-005
 
 ## Siguiente paso
-**Paso 4.2:** Carlos ejecuta `.\db_check.ps1` (pendiente) y luego `.\extract.ps1` (primera extracción real de Comtrade). Después, 4.3: extractores de USDA PSD, FAOSTAT y aranceles.
+**Paso 4.2b:** Carlos vuelve a correr `.\extract.ps1` (≈15 consultas: China/Ecuador 2025–2026, espejo 2018–2026 y disponibilidad). Después, 4.3: USDA PSD, FAOSTAT y aranceles.

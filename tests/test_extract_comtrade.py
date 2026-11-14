@@ -1,6 +1,6 @@
 """
 test_extract_comtrade.py · Pruebas del extractor de Comtrade SIN llamar a la API real.
-Se usa una sesión HTTP falsa que devuelve respuestas simuladas con la forma real de Comtrade.
+Una sesión HTTP falsa devuelve respuestas con la estructura real de Comtrade.
 Uso:  python -m pytest tests/test_extract_comtrade.py -v
 """
 import dataclasses
@@ -11,16 +11,30 @@ from sqlalchemy import text
 import src.extract_comtrade as ec
 from src.db import BRONZE, get_engine
 
+N_GROUPS = len(ec.QUERY_GROUPS)   # directo China, directo Ecuador, espejo
 
-def fake_payload(query, value=100.0):
-    """Respuesta con la estructura de Comtrade: 2 socios × 1 línea HS × 12 meses (+ Mundo)."""
+
+def fake_data(params, value=100.0):
+    """Registros con la forma de Comtrade para los reporters/año pedidos."""
+    year = int(params["period"][:4])
+    reporters = [int(r) for r in str(params["reporterCode"]).split(",")]
+    partners = [int(params["partnerCode"])] if "partnerCode" in params else [0, 842, 724]
     data = []
-    for m in range(1, 13):
-        for partner, factor in ((0, 3), (842, 1), (724, 2)):   # Mundo, EE. UU., España
-            data.append({"period": f"{query.year}{m:02d}", "reporterCode": query.reporter_code,
-                         "partnerCode": partner, "cmdCode": "020649", "flowCode": query.flow,
-                         "netWgt": 1000.0 * factor, "primaryValue": value * factor})
+    for rep in reporters:
+        for m in range(1, 13):
+            for partner in partners:
+                data.append({"period": f"{year}{m:02d}", "reporterCode": rep, "partnerCode": partner,
+                             "cmdCode": "020649", "flowCode": params["flowCode"],
+                             "netWgt": 1000.0, "primaryValue": value})
     return {"elapsedTime": "0.1 secs", "count": len(data), "data": data, "error": ""}
+
+
+def fake_da(params):
+    """getDa: China publicó hasta 2024-12; Ecuador hasta 2025-06."""
+    last = {"156": (2024, 12), "218": (2025, 6)}[str(params["reporterCode"])]
+    data = [{"reporterCode": int(params["reporterCode"]), "period": f"{y}{m:02d}"}
+            for y in range(2023, last[0] + 1) for m in range(1, 13) if (y, m) <= last]
+    return {"count": len(data), "data": data, "error": ""}
 
 
 class FakeResponse:
@@ -36,24 +50,27 @@ class FakeResponse:
 
 
 class FakeSession:
-    """Devuelve las respuestas en orden; registra cada llamada."""
+    """Devuelve respuestas simuladas; script = lista de códigos HTTP para las primeras llamadas."""
     def __init__(self, script=None, value=100.0):
         self.calls, self.script, self.value = [], list(script or []), value
 
     def get(self, url, params, timeout, headers):
-        year = int(params["period"][:4])
-        q = ec.Query(int(params["reporterCode"]), "X", params["flowCode"], year)
-        self.calls.append((params["reporterCode"], params["flowCode"], year))
+        self.calls.append((url, dict(params)))
         if self.script:
             status = self.script.pop(0)
             if status != 200:
                 return FakeResponse(status, headers={"Retry-After": "0"})
-        return FakeResponse(200, fake_payload(q, self.value))
+        if url == ec.DA_URL:
+            return FakeResponse(200, fake_da(params))
+        return FakeResponse(200, fake_data(params, self.value))
+
+    def data_calls(self):
+        return [p for u, p in self.calls if u == ec.BASE_URL]
 
 
 @pytest.fixture(autouse=True)
 def isolated(tmp_path, monkeypatch):
-    """Caché en carpeta temporal, sin pausas ni esperas, llave falsa; limpia bronze al final."""
+    """Caché temporal, sin esperas, llave falsa; limpia bronze al final."""
     monkeypatch.setattr(ec, "CACHE_DIR", tmp_path / "comtrade")
     monkeypatch.setattr(ec.time, "sleep", lambda s: None)
     monkeypatch.setattr(ec.fetch.retry, "sleep", lambda s: None)
@@ -65,46 +82,57 @@ def isolated(tmp_path, monkeypatch):
         c.execute(text(f"DELETE FROM {BRONZE}.extract_batch WHERE params->>'$.start_year' = '1990'"))
 
 
+def run(start, end, **kw):
+    kw.setdefault("session", FakeSession())
+    kw.setdefault("check_availability", False)
+    return ec.run(start, end, pause=0, **kw)
+
+
 def test_plan_counts():
     to_fetch, cached = ec.build_plan(1990, 1992)
-    assert len(to_fetch) == 6 and cached == []           # 2 reporters × 3 años, sin caché
-    assert to_fetch[0].params()["period"].startswith("199001,199002")
-    assert to_fetch[0].params()["partner2Code"] == 0     # solo totales
+    assert len(to_fetch) == N_GROUPS * 3 and cached == []
+    p = to_fetch[0].params()
+    assert p["period"].startswith("199001,199002") and p["partner2Code"] == 0
+
+
+def test_mirror_query_is_one_call_for_all_exporters():
+    to_fetch, _ = ec.build_plan(1990, 1990)
+    mirror = [q for q in to_fetch if q.is_mirror]
+    assert len(mirror) == 1
+    p = mirror[0].params()
+    assert p["partnerCode"] == 156 and p["flowCode"] == "X"
+    assert len(p["reporterCode"].split(",")) == len(ec.MIRROR_REPORTERS)
 
 
 def test_extract_saves_to_bronze_and_cache():
-    s = FakeSession()
-    stats = ec.run(1990, 1990, session=s, pause=0)
-    assert stats["fetched"] == 2 and stats["new_raw"] == 2 and stats["records"] == 72
-    assert (ec.CACHE_DIR / "CHN_M_1990.json").exists()
-    assert (ec.CACHE_DIR / "ECU_X_1990.json").exists()
+    stats = run(1990, 1990)
+    assert stats["fetched"] == N_GROUPS and stats["new_raw"] == N_GROUPS
+    assert stats["mirror_records"] == len(ec.MIRROR_REPORTERS) * 12
+    assert (ec.CACHE_DIR / "MIRROR_X_1990.json").exists()
 
 
 def test_rerun_does_not_duplicate_bronze():
-    ec.run(1990, 1990, session=FakeSession(), pause=0)
-    stats = ec.run(1990, 1990, session=FakeSession(), pause=0)   # misma data → mismo hash
-    assert stats["new_raw"] == 0
+    run(1990, 1990)
+    assert run(1990, 1990)["new_raw"] == 0
 
 
 def test_closed_years_come_from_cache():
-    ec.run(1990, 1994, session=FakeSession(), pause=0)             # llena la caché
+    run(1990, 1994)
     s = FakeSession()
-    stats = ec.run(1990, 1994, session=s, pause=0)
-    # cerrados = 1990–1992 (fuera de la ventana de 2 años) → solo 1993 y 1994 van a la API
-    assert stats["cached"] == 6 and stats["fetched"] == 4
-    assert sorted({c[2] for c in s.calls}) == [1993, 1994]
+    stats = run(1990, 1994, session=s)
+    assert stats["cached"] == N_GROUPS * 3 and stats["fetched"] == N_GROUPS * 2
+    assert sorted({int(p["period"][:4]) for p in s.data_calls()}) == [1993, 1994]
 
 
 def test_revised_data_enters_as_new_version():
-    ec.run(1990, 1990, session=FakeSession(value=100.0), pause=0)
-    stats = ec.run(1990, 1990, session=FakeSession(value=101.0), pause=0)   # la fuente corrige
-    assert stats["new_raw"] == 2       # bronze guarda ambas versiones (inmutable)
+    run(1990, 1990, session=FakeSession(value=100.0))
+    assert run(1990, 1990, session=FakeSession(value=101.0))["new_raw"] == N_GROUPS
 
 
 def test_retries_on_429_then_succeeds():
-    s = FakeSession(script=[429, 503, 200, 200])
-    stats = ec.run(1990, 1990, session=s, pause=0)
-    assert stats["fetched"] == 2 and len(s.calls) == 4
+    s = FakeSession(script=[429, 503])
+    stats = run(1990, 1990, session=s)
+    assert stats["fetched"] == N_GROUPS and len(s.data_calls()) == N_GROUPS + 2
 
 
 def test_invalid_key_fails_fast_and_batch_is_failed():
@@ -114,8 +142,8 @@ def test_invalid_key_fails_fast_and_batch_is_failed():
             return FakeResponse(401)
     s = Denied()
     with pytest.raises(PermissionError):
-        ec.run(1990, 1990, session=s, pause=0)
-    assert len(s.calls) == 1           # 401 no se reintenta
+        run(1990, 1990, session=s)
+    assert len(s.calls) == 1
     with get_engine("etl").connect() as c:
         status = c.execute(text(f"SELECT status FROM {BRONZE}.extract_batch "
                                 "WHERE params->>'$.start_year'='1990' ORDER BY batch_id DESC LIMIT 1")).scalar()
@@ -127,4 +155,13 @@ def test_api_error_field_raises():
         def get(self, *a, **k):
             return FakeResponse(200, {"data": [], "error": "Invalid parameter"})
     with pytest.raises(RuntimeError, match="Invalid parameter"):
-        ec.run(1990, 1990, session=ErrSession(), pause=0)
+        run(1990, 1990, session=ErrSession())
+
+
+def test_availability_report_detects_gap(capsys):
+    stats = run(1990, 1990, check_availability=True)
+    av = stats["availability"]
+    assert av[156][-1] == "202412"             # China: último mes publicado
+    assert av[218][-1] == "202506"             # Ecuador
+    out = capsys.readouterr().out
+    assert "CHN (156): último mes publicado 202412" in out
