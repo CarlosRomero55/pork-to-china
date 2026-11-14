@@ -1,0 +1,38 @@
+# Pork to China · dependencias con versión fija
+# Verificado: todas tienen instalador precompilado (wheel) para Windows x64 con Python 3.12 y 3.14.
+# (Así pip nunca intenta compilar desde el código fuente, lo que exigiría Visual Studio.)
+
+# --- Datos y cálculo ---
+pandas==2.3.3                   # 2.3.x: primera serie con wheels para Python 3.14 (se evita pandas 3.x por sus cambios de comportamiento)
+numpy==2.5.4
+scipy==1.18.1
+numpy-financial==1.1.0          # VAN, TIR (npf.npv, npf.irr)
+
+# --- Base de datos (MySQL 8) ---
+SQLAlchemy==2.1.8
+PyMySQL==1.2.4
+cryptography==50.0.2            # necesario para el login caching_sha2_password de MySQL 8
+
+# --- Extracción ---
+requests==2.34.2
+tenacity==9.2.1                 # reintentos con espera exponencial
+comtradeapicall==1.4.0          # cliente oficial de UN Comtrade
+pdfplumber==0.11.10             # tablas de los PDF de Agrocalidad
+openpyxl==3.1.5                 # lectura/escritura de Excel
+
+# --- Configuración y registro ---
+python-dotenv==1.2.4
+
+# --- Pruebas ---
+pytest==9.2.0
+
+# --- API ---
+fastapi==0.162.7
+uvicorn==0.54.0
+
+# --- Visualización y notebooks ---
+matplotlib==3.11.2
+plotly==7.1.0
+ipykernel==7.4.0
+
+# Capa 2 (mapa sanitario) se agregará luego en requirements-geo.txt: geopandas, folium

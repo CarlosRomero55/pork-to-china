@@ -1,0 +1,37 @@
+# --- Secretos (NUNCA subir) ---
+.env
+*.env
+!.env.example
+
+# --- Entorno virtual y caché de Python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Datos crudos y pesados (se regeneran con el pipeline) ---
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# --- Entrevistas: solo versiones anonimizadas ---
+data/qualitative/raw/
+data/qualitative/*.mp3
+data/qualitative/*.m4a
+
+# --- Registros ---
+logs/*
+!logs/.gitkeep
+
+# --- Power BI: archivos temporales ---
+powerbi/*.pbix.bak
+~$*
+
+# --- Sistema / editores ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
