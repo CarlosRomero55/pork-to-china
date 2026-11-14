@@ -2,8 +2,9 @@
 
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
-- **Fase:** 2 – Esquemas MySQL
-- **Paso:** 2.2 de 3 completado → siguiente 2.3 (`.\db_setup.ps1` en el PC de Carlos)
+- **Fase:** 2 – Esquemas MySQL → **cerrada**
+- **Paso:** siguiente, Fase 3 – Conexión Python ↔ MySQL
+- **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
 ## Perfil y ritmo (modo mentor)
@@ -22,6 +23,7 @@
 - 2026-11-13 · 1.1 · Estructura de carpetas, .gitignore, .env.example, requirements.txt (19 librerías fijadas), src/config.py, setup.ps1, README borrador
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
+- 2026-11-13 · 2.3 · db_setup.ps1 OK en el PC de Carlos (usa root del .env una vez, genera contraseñas de pork_etl/pork_bi y saca root del .env). Primer push a GitHub: 4 commits por fase
 - 2026-11-13 · 2.2b · db_setup corregido: acepta root sin contraseña, valida root antes de pedir las contraseñas nuevas (3 intentos)
 - 2026-11-13 · 2.2 · SQL 01_bronze/02_silver/03_gold + seed + src/db_setup.py + tests/test_schema.py; probado en MySQL 8.0.46: 29 tablas/vistas, 90 medidas SCD2 sin solapes, arancel EE. UU. reconstruido 37/172/57/47%, 6/6 pytest, idempotente
 - 2026-11-13 · 1.1b · Corrección: el PC tiene Py 3.14 → pandas 2.2.3 no tenía wheel y pip intentaba compilar. Se actualizaron las versiones (pandas 2.3.3, etc.), verificadas con wheels para Windows en Py 3.12 y 3.14; setup.ps1 ahora se detiene ante errores y usa --only-binary
@@ -29,7 +31,7 @@
 ## Decisiones tomadas
 | Fecha | Decisión | ADR |
 |---|---|---|
-| 2026-11-13 | Carpeta raíz `D:\pork-to-china` (repo en GitHub: `pork-to-china-ecuador`) | — |
+| 2026-11-13 | Carpeta raíz `D:\pork-to-china`; repo en GitHub `CarlosRomero55/pork-to-china` | — |
 | 2026-11-13 | Periodo de análisis: 2018 a la fecha | — |
 | 2026-11-13 | Granularidad mensual | — |
 | 2026-11-13 | Ventana de comparación: 12 meses antes / 12 meses después de cada corte | — |
@@ -64,4 +66,4 @@
 - [ ] ADR-003, ADR-004 y ADR-005
 
 ## Siguiente paso
-**Paso 2.3:** Carlos ejecuta `.\db_setup.ps1` (pide la contraseña de root y crea las de pork_etl/pork_bi). Luego, **Fase 3 – Conexión Python ↔ MySQL** (db.py: SQLAlchemy, upsert, logging).
+**Fase 3 – Conexión Python ↔ MySQL:** db.py (SQLAlchemy + PyMySQL), upsert, carga incremental, logging.
