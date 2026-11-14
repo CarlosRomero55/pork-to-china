@@ -7,6 +7,7 @@
 -- ---------- Fuentes ----------
 INSERT IGNORE INTO pork_silver.source (name, publisher, url) VALUES
  ('comtrade',            'UN Statistics Division',                       'https://comtradeplus.un.org'),
+ ('comtrade_mirror',     'UN Statistics Division (datos espejo: exportadores → China)', 'https://comtradeplus.un.org'),
  ('gacc',                'General Administration of Customs of China',   'http://stats.customs.gov.cn'),
  ('usda_psd',            'USDA Foreign Agricultural Service',            'https://apps.fas.usda.gov/psdonline'),
  ('faostat',             'FAO',                                          'https://www.fao.org/faostat'),
@@ -46,6 +47,8 @@ INSERT IGNORE INTO pork_silver.country (iso3, comtrade_code, name_en, name_es) V
  ('JPN', 392,'Japan','Japón'),
  ('AUS',  36,'Australia','Australia'),
  ('NZL', 554,'New Zealand','Nueva Zelanda'),
+ ('CHE', 757,'Switzerland','Suiza'),
+ ('CRI', 188,'Costa Rica','Costa Rica'),
  -- UE27
  ('AUT',  40,'Austria','Austria'),
  ('BEL',  56,'Belgium','Bélgica'),

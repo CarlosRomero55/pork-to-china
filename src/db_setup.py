@@ -215,6 +215,15 @@ def main() -> int:
     create_users(root, etl_pwd, bi_pwd)
     root.close()
     update_env(etl_pwd, bi_pwd)
+    # Migraciones versionadas (sql/migrations) como pork_etl
+    from sqlalchemy import create_engine
+    from sqlalchemy.engine import URL
+    from src.migrate import migrate
+    etl_engine = create_engine(URL.create("mysql+pymysql", username="pork_etl", password=etl_pwd,
+                                          host=settings.db_host, port=settings.db_port,
+                                          query={"charset": "utf8mb4"}))
+    applied = migrate(etl_engine)
+    print(f"  OK  migraciones: {', '.join(applied) if applied else 'ninguna pendiente'}")
     print("[3/3] Verificación (conectado como pork_etl)")
     ok = verify(etl_pwd)
 

@@ -30,6 +30,9 @@
 | 20 | Referencia de protocolo | El protocolo de lácteos Ecuador–China se aprobó ~1 año después de la vigencia del acuerdo | ✅ | El Diario (1-may-2025) |
 | 21 | Acuerdo comercial Ecuador–China | Vigente desde el 1-may-2024; el cerdo figura entre los nuevos productos exportables; **canasta HS 0203/0206 sin confirmar** | ❓ | Primicias; Bloomberg Línea |
 | 22 | Benchmark Bolivia | Santa Cruz es zona libre de PPC sin vacunación (certificado OMSA del 22-may-2026) | ✅ | OMSA vía 333 / Food Business MEA (may-2026) |
+| 24 | Represalia de China contra Canadá | 25% adicional a carne y vísceras de cerdo canadienses desde el 20-mar-2025; el acuerdo Canadá–China de ene-2026 NO incluyó al cerdo (sigue vigente) | 🆕 ✅ | EY (31-mar-2025); Farms.com y Western Producer (ene-2026) |
+| 25 | China en Comtrade | Importaciones mensuales publicadas solo hasta 2024-12 (getDa) → se usan datos espejo (ADR-008) | 🆕 | API getDa de Comtrade (13-nov-2026) |
+| 26 | Conciliación directo vs espejo 2018–2024 | Peso 0,992 · valor CIF/FOB 1,037 (ponderados) | 🆕 | Cálculo propio (harmonize.py) |
 | 23 | Benchmark Colombia | La OMSA reconoció zonas libres de PPC en 2026 | 🆕 | OMSA (2026) |
 
 ## B. Supuestos (a completar en la Fase 10, con rango mín/base/máx)
