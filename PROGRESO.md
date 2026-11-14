@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4 – Extracción a bronze
-- **Paso:** 4.2b completado (espejo + disponibilidad) → Carlos vuelve a correr `.\extract.ps1`
+- **Paso:** 4.2 cerrado (Comtrade en bronze: 11.066 registros) → siguiente: Fase 5 con Comtrade (vertical slice) o 4.3 otras fuentes
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-13 · 4.2c · Corrida real con espejo: MIRROR 2018–2025 completos (12/12) y 2026 hasta septiembre (9/12); 6.067 registros espejo, 11.066 en total en bronze. getDa confirma: China publicó en Comtrade solo hasta 2024-12 (el hueco es de la fuente, no nuestro); Ecuador hasta 2026-03, pero sin exportaciones de cerdo en 2025–2026; 2025 de Ecuador no figura en getDa (verificar). Reintento ante 429 funcionó en real. Incidente: copias al PC en paralelo dejaron archivos viejos; corregido y verificado (30/30 archivos idénticos al repo)
 - 2026-11-13 · 4.2b · Extracción espejo (12 exportadores → China, flujo X, 1 consulta por año para todos) + consulta getDa de disponibilidad; 23/23 pytest
 - 2026-11-13 · 4.1 · src/extract_comtrade.py: CHN importaciones + ECU exportaciones, mensual 2018→hoy, 12 HS, todos los socios, solo totales (partner2/customs/mot = 0); 18 consultas por corrida completa (cupo gratuito 500/día); caché en data/raw/comtrade con ventana de revisión de 2 años; reintentos exponenciales ante 429/5xx; 401/403 falla sin reintentar. 8 pruebas con API simulada (21/21 en total)
 - 2026-11-13 · 3.2 · (pendiente confirmar salida de db_check.ps1 en el PC)
