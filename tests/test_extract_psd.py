@@ -62,6 +62,8 @@ def isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(ep, "settings", dataclasses.replace(ep.settings, usda_fas_api_key="test-key"))
     yield
     with get_engine("etl").begin() as c:
+        c.execute(text(f"DELETE FROM {BRONZE}.raw_file WHERE batch_id IN (SELECT batch_id FROM "
+                       f"{BRONZE}.extract_batch WHERE source_name='usda_psd' AND params->>'$.start_year'='1990')"))
         c.execute(text(f"DELETE FROM {BRONZE}.raw_api_response WHERE batch_id IN (SELECT batch_id FROM "
                        f"{BRONZE}.extract_batch WHERE source_name='usda_psd' AND params->>'$.start_year'='1990')"))
         c.execute(text(f"DELETE FROM {BRONZE}.extract_batch WHERE source_name='usda_psd' "
@@ -91,15 +93,15 @@ def test_rerun_does_not_duplicate():
 
 
 def test_retries_then_succeeds():
-    s = FakeSession(script=[429, 503])
+    s = FakeSession(script=[200, 429, 503])          # 1ª = verificación rápida de la API
     assert ep.run(1990, 1990, session=s, pause=0)["calls"] == 6
 
 
 def test_invalid_key_fails_fast():
-    s = FakeSession(script=[403])
+    s = FakeSession(script=[200, 403])               # la API responde, pero rechaza la llave en catálogos
     with pytest.raises(PermissionError):
         ep.run(1990, 1990, session=s, pause=0)
-    assert len(s.calls) == 1
+    assert len(s.calls) == 2
 
 
 def test_missing_catalog_does_not_stop_extraction(capsys):
@@ -126,4 +128,68 @@ def test_probe_masks_key(capsys):
             return r
     ep.probe(Echo(), "test-key")
     out = capsys.readouterr().out
-    assert "test-key" not in out and "***" in out and out.count("[500]") == 5
+    assert "test-key" not in out and "***" in out and out.count("[500]") == 5 + len(ep.BULK_URLS)
+
+
+# ---------------------------------------------------------------- descarga masiva
+import io as _io
+import zipfile as _zip
+
+CSV = ("Commodity_Code,Commodity_Description,Country_Code,Country_Name,Market_Year,Calendar_Year,Month,"
+       "Attribute_ID,Attribute_Description,Unit_ID,Unit_Description,Value\n"
+       "0113000,\"Meat, Swine\",CH,China,1990,2026,10,28,Production,21,(1000 MT CWE),59000\n"
+       "0113000,\"Meat, Swine\",CH,China,1990,2026,10,57,Imports,21,(1000 MT CWE),1100\n"
+       "0113000,\"Meat, Swine\",CH,China,1990,2026,10,125,Domestic Consumption,21,(1000 MT CWE),60000\n"
+       "0113000,\"Meat, Swine\",EC,Ecuador,1990,2026,10,28,Production,21,(1000 MT CWE),240\n"
+       "0111000,\"Meat, Beef and Veal\",CH,China,1990,2026,10,28,Production,21,(1000 MT CWE),7700\n")
+
+
+def make_zip(csv=CSV):
+    buf = _io.BytesIO()
+    with _zip.ZipFile(buf, "w") as z:
+        z.writestr("psd_livestock.csv", csv)
+    return buf.getvalue()
+
+
+class BulkResp(Resp):
+    def __init__(self, status, content=b"", ctype="application/zip"):
+        super().__init__(status)
+        self.content, self.headers = content, {"Content-Type": ctype}
+
+
+class ApiDownBulkUp:
+    """La API responde 500; la descarga masiva funciona (opcionalmente la 1ª URL da 404)."""
+    def __init__(self, first_404=False):
+        self.calls, self.first_404 = [], first_404
+
+    def get(self, url, timeout, headers):
+        self.calls.append(url)
+        if "/OpenData/" in url:
+            return BulkResp(500, b'{"message":"An error has occurred."}', "application/json")
+        if self.first_404 and url == ep.BULK_URLS[0]:
+            return BulkResp(404, b"not found", "text/html")
+        return BulkResp(200, make_zip())
+
+
+def test_falls_back_to_bulk_when_api_down(capsys):
+    stats = ep.run(1990, 1990, session=ApiDownBulkUp(), pause=0)
+    assert stats["mode"] == "bulk" and stats["records"] == 4          # 4 filas de cerdo, la de res se filtra
+    out = capsys.readouterr().out
+    assert "DESCARGA MASIVA" in out and "Atributos de China: ['Domestic Consumption', 'Imports', 'Production']" in out
+    assert (ep.CACHE_DIR / "psd_livestock_csv.zip").exists()
+
+
+def test_bulk_same_file_is_not_duplicated():
+    assert ep.run(1990, 1990, session=ApiDownBulkUp(), pause=0)["new_raw"] == 1
+    assert ep.run(1990, 1990, session=ApiDownBulkUp(), pause=0)["new_raw"] == 0
+
+
+def test_bulk_tries_next_url():
+    s = ApiDownBulkUp(first_404=True)
+    stats = ep.run(1990, 1990, session=s, pause=0)
+    assert stats["records"] == 4 and ep.BULK_URLS[1] in s.calls
+
+
+def test_read_pork_only():
+    df = ep.read_pork_from_zip(make_zip())
+    assert set(df["commoditydescription"]) == {"Meat, Swine"} and len(df) == 4

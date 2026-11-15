@@ -6,8 +6,12 @@ Qué descarga (carne de cerdo, todos los países + agregado mundial, 2018 → a�
   - Balance por país y año comercial: producción, consumo, importaciones, exportaciones,
     inventarios... (/country/all/year/{año}) y el total mundial (/world/year/{año}).
 
+Dos vías (se elige sola):
+  1. API oficial: https://apps.fas.usda.gov/OpenData · llave de api.data.gov en el encabezado API_KEY.
+  2. Plan B, DESCARGA MASIVA de PSD Online (psd_livestock_csv.zip): se usa si la API no responde
+     (en nov-2026 devolvía HTTP 500 en todas las rutas con la llave aceptada). No necesita llave.
+
 Diseño:
-  - API oficial: https://apps.fas.usda.gov/OpenData · llave de api.data.gov en el encabezado API_KEY.
   - El código del producto NO se escribe a mano: se busca en el catálogo (nombre con "swine"/"pork").
   - Solo guarda respuestas crudas en bronze (hash anti-duplicados) y en data/raw/usda_psd/.
     La interpretación de campos va en el paso siguiente, con la estructura real a la vista.
@@ -21,17 +25,22 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
+import zipfile
 import sys
 import time
 from collections import Counter
 from datetime import date
 
+import pandas as pd
+
 import requests
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from src.config import DATA_RAW, settings
-from src.db import get_engine, save_raw_response, track_batch
+from src.config import DATA_RAW, ROOT_DIR, settings
+from src.db import BRONZE, get_engine, save_raw_response, track_batch
 from src.logging_setup import get_logger
 
 log = get_logger(__name__)
@@ -41,6 +50,10 @@ SOURCE = "usda_psd"
 CACHE_DIR = DATA_RAW / "usda_psd"
 REFERENCE = ["commodities", "countries", "commodityAttributes", "unitsOfMeasure"]
 FALLBACK_PORK_CODE = "0113000"          # Meat, Swine (se usa solo si el catálogo no lo encuentra)
+BULK_URLS = [   # se prueban en orden
+    "https://apps.fas.usda.gov/psdonline/downloads/psd_livestock_csv.zip",
+    "https://apps.fas.usda.gov/psdonline/downloads/psd_alldata_csv.zip",
+]
 PAUSE_SECONDS = 0.5
 TIMEOUT = (10, 120)
 
@@ -86,12 +99,16 @@ def probe(session: requests.Session, api_key: str) -> None:
          f"?api_key={api_key}", {}),
         ("catálogo commodities, SIN llave (debe dar 401/403)", f"{BASE}/commodities", {}),
     ]
-    print("Diagnóstico de la API de USDA (1 intento por variante):")
+    variants += [(f"descarga masiva {u.rsplit('/', 1)[1]}", u, {}) for u in BULK_URLS]
+    print("Diagnóstico de USDA (1 intento por variante):")
     for label, url, headers in variants:
         try:
             r = session.get(url, timeout=TIMEOUT, headers={**headers, "Accept": "application/json"})
             ctype = r.headers.get("Content-Type", "?").split(";")[0]
-            body = _snippet(r).replace(api_key, "***") if api_key else _snippet(r)
+            if ctype in ("application/zip", "application/x-zip-compressed", "application/octet-stream"):
+                body = f"archivo ZIP de {len(r.content) / 1e6:.1f} MB disponible"
+            else:
+                body = _snippet(r).replace(api_key, "***") if api_key else _snippet(r)
             print(f"  [{r.status_code}] {label} · {ctype} · {body[:160]}")
         except requests.RequestException as e:
             print(f"  [ERR] {label} · {type(e).__name__}: {e}")
@@ -161,6 +178,111 @@ def discovery_report(pork: tuple[str, str], data_by_year: dict[int, list], count
             print(f"China · producción {last}: {prod[0].get('value')} (unidad id {prod[0].get('unitid')})")
 
 
+# ---------------------------------------------------------------- vía 2: descarga masiva
+def api_healthcheck(session: requests.Session, api_key: str) -> bool:
+    """Una sola llamada, sin reintentos: ¿la API responde datos ahora mismo?"""
+    if not api_key:
+        return False
+    url = f"{BASE}/commodity/{FALLBACK_PORK_CODE}/world/year/{date.today().year - 1}"
+    try:
+        r = session.get(url, timeout=TIMEOUT, headers={"API_KEY": api_key, "Accept": "application/json"})
+        return r.status_code == 200
+    except requests.RequestException:
+        return False
+
+
+def download_bulk(session: requests.Session) -> tuple[str, bytes]:
+    """Descarga el primer ZIP disponible de PSD Online. Devuelve (url, contenido)."""
+    errors = []
+    for url in BULK_URLS:
+        try:
+            r = session.get(url, timeout=(10, 300), headers={"Accept": "application/zip"})
+            if r.status_code == 200 and r.content[:2] == b"PK":      # firma de un ZIP
+                return url, r.content
+            errors.append(f"{url.rsplit('/', 1)[1]} → HTTP {r.status_code}")
+        except requests.RequestException as e:
+            errors.append(f"{url.rsplit('/', 1)[1]} → {type(e).__name__}")
+    raise RuntimeError("No se pudo descargar PSD Online: " + "; ".join(errors))
+
+
+def read_pork_from_zip(content: bytes) -> pd.DataFrame:
+    """Lee el CSV del ZIP y deja solo la carne de cerdo. Columnas normalizadas (minúsculas, sin '_')."""
+    with zipfile.ZipFile(io.BytesIO(content)) as z:
+        name = next(n for n in z.namelist() if n.lower().endswith(".csv"))
+        with z.open(name) as f:
+            df = pd.read_csv(f, dtype=str, encoding="utf-8-sig")
+    df.columns = [c.lower().replace("_", "").replace(" ", "") for c in df.columns]
+    desc = df.get("commoditydescription", pd.Series("", index=df.index)).str.lower()
+    is_pork = (desc.str.contains("swine") | desc.str.contains("pork")) & desc.str.contains("meat")
+    if "commoditycode" in df.columns:
+        is_pork |= df["commoditycode"].eq(FALLBACK_PORK_CODE)
+    return df[is_pork].reset_index(drop=True)
+
+
+def _rel(path) -> str:
+    """Ruta relativa a la raíz del proyecto (o absoluta si está fuera, p. ej. en pruebas)."""
+    try:
+        return str(path.relative_to(ROOT_DIR)).replace("\\", "/")
+    except ValueError:
+        return str(path)
+
+
+def register_file(engine, batch_id: int, url: str, content: bytes) -> tuple[str, bool]:
+    """Guarda el ZIP en data/raw/usda_psd y lo registra en bronze.raw_file (sin duplicar por hash)."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    fname = url.rsplit("/", 1)[1]
+    path = CACHE_DIR / fname
+    path.write_bytes(content)
+    digest = hashlib.sha256(content).hexdigest()
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        res = conn.execute(text(f"""INSERT IGNORE INTO {BRONZE}.raw_file
+            (batch_id, source_name, file_name, stored_path, source_url, file_hash)
+            VALUES (:b, :s, :f, :p, :u, :h)"""),
+            {"b": batch_id, "s": SOURCE, "f": fname, "p": _rel(path),
+             "u": url, "h": digest})
+    return digest, res.rowcount == 1
+
+
+def bulk_discovery(df: pd.DataFrame, start_year: int) -> None:
+    print("\n=== Reporte de descubrimiento (descarga masiva, estructura real) ===")
+    if df.empty:
+        print("El archivo no trae registros de carne de cerdo: revisar el contenido del ZIP.")
+        return
+    print(f"Columnas: {list(df.columns)}")
+    print(f"Producto: {df['commoditydescription'].iloc[0]} · código {df['commoditycode'].iloc[0]}")
+    years = pd.to_numeric(df["marketyear"], errors="coerce")
+    print(f"Registros de cerdo: {len(df)} · años {int(years.min())}–{int(years.max())} · "
+          f"desde {start_year}: {(years >= start_year).sum()}")
+    countries = df.drop_duplicates("countrycode")[["countrycode", "countryname"]]
+    print(f"Países con datos: {len(countries)} → " + ", ".join(
+        f"{r.countrycode} ({r.countryname})" for r in countries.head(14).itertuples()))
+    ch = df[df["countryname"].str.lower().eq("china")]
+    if len(ch):
+        print(f"Atributos de China: {sorted(ch['attributedescription'].unique())}")
+        unit = ch["unitdescription"].iloc[0] if "unitdescription" in ch else "?"
+        last = ch[pd.to_numeric(ch["marketyear"]) >= start_year]
+        piv = (last[last["attributedescription"].isin(["Production", "Imports", "Domestic Consumption"])]
+               .assign(v=lambda x: pd.to_numeric(x["value"], errors="coerce"))
+               .pivot_table(index="marketyear", columns="attributedescription", values="v", aggfunc="last"))
+        if len(piv):
+            print(f"China (unidad: {unit}):\n" + piv.to_string())
+
+
+def run_bulk(session: requests.Session, start_year: int) -> dict:
+    print("  → La API no responde; se usa la DESCARGA MASIVA de PSD Online (no necesita llave)")
+    engine = get_engine("etl")
+    with track_batch(SOURCE, {"mode": "bulk", "start_year": start_year, "urls": BULK_URLS}) as batch:
+        url, content = download_bulk(session)
+        digest, is_new = register_file(engine, batch.batch_id, url, content)
+        df = read_pork_from_zip(content)
+        batch.rows_loaded = len(df) if is_new else 0
+        print(f"  {url.rsplit('/', 1)[1]} · {len(content) / 1e6:.1f} MB · "
+              f"{'nuevo' if is_new else 'igual (mismo archivo que la última vez)'} · {len(df)} registros de cerdo")
+    bulk_discovery(df, start_year)
+    return {"mode": "bulk", "calls": 1, "new_raw": int(is_new), "records": len(df)}
+
+
 def run(start_year: int, end_year: int, dry_run: bool = False,
         session: requests.Session | None = None, pause: float = PAUSE_SECONDS) -> dict:
     years = list(range(start_year, end_year + 1))
@@ -170,10 +292,10 @@ def run(start_year: int, end_year: int, dry_run: bool = False,
     if dry_run:
         return {"calls": 0}
     api_key = settings.usda_fas_api_key
-    if not api_key:
-        raise SystemExit("Falta USDA_FAS_API_KEY en .env (se obtiene en https://api.data.gov/signup)")
-
     session = session or requests.Session()
+    if not api_healthcheck(session, api_key):
+        return run_bulk(session, start_year)
+    print("  → La API responde: se usa la API")
     engine = get_engine("etl")
     stats = {"calls": 0, "new_raw": 0, "records": 0}
     refs: dict[str, list] = {}

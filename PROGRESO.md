@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 4.3a-c · Diagnóstico en el PC: sin llave 403 (la puerta revisa la llave), llave como parámetro 403, llave en encabezado 500 en TODAS las rutas → llave válida, falla interna de USDA. Plan B automático: verificación rápida de la API (1 llamada) y, si falla, descarga masiva de PSD Online (psd_livestock_csv.zip → bronze.raw_file), filtra 'Meat, Swine'. 59/59 pytest
 - 2026-11-15 · 4.3a-b · Primera corrida real: HTTP 500 persistente en el catálogo commodities de USDA (domingo; posible caída o cambio). Se agregó modo diagnóstico (--probe, llave enmascarada) y catálogos opcionales. 55/55 pytest
 - 2026-11-15 · 4.3a · extract_psd.py: API oficial apps.fas.usda.gov/OpenData (encabezado API_KEY); código del cerdo buscado en el catálogo; 24 consultas (4 catálogos + 10 años × país/mundo, 2018–2027); solo bronze + reporte de descubrimiento para diseñar silver con la estructura real. 53/53 pytest
 - 2026-11-15 · 6.2 · validate.ps1 OK en el PC: 280 filas marcadas, 10 OK · 1 alerta (R08) · 0 errores, 48/48 pytest; reporte regenerado en docs/
@@ -90,4 +91,4 @@
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
 
 ## Siguiente paso
-**Paso 4.3a:** Carlos corre `.\psd.ps1 -Probe` (diagnóstico) y luego `.\psd.ps1`; pega el reporte de descubrimiento. Luego: 4.3b silver de PSD (migración 003 + regla de balance oferta = demanda), FAOSTAT y aranceles NMF por línea HS; después Fase 7 (gold).
+**Paso 4.3a:** Carlos corre `.\psd.ps1` (usará la descarga masiva si la API sigue caída) y pega el reporte de descubrimiento. Luego: 4.3b silver de PSD (migración 003 + regla de balance oferta = demanda), FAOSTAT y aranceles NMF por línea HS; después Fase 7 (gold).
