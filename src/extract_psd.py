@@ -99,11 +99,13 @@ def probe(session: requests.Session, api_key: str) -> None:
          f"?api_key={api_key}", {}),
         ("catálogo commodities, SIN llave (debe dar 401/403)", f"{BASE}/commodities", {}),
     ]
-    variants += [(f"descarga masiva {u.rsplit('/', 1)[1]}", u, {}) for u in BULK_URLS]
+    variants += [(f"descarga masiva {u.rsplit('/', 1)[1]} [{lbl}]", u, h)
+                 for u in BULK_URLS for lbl, h in BULK_HEADER_VARIANTS]
     print("Diagnóstico de USDA (1 intento por variante):")
     for label, url, headers in variants:
         try:
-            r = session.get(url, timeout=TIMEOUT, headers={**headers, "Accept": "application/json"})
+            hdrs = headers if "Accept" in headers else {**headers, "Accept": "application/json"}
+            r = session.get(url, timeout=TIMEOUT, headers=hdrs)
             ctype = r.headers.get("Content-Type", "?").split(";")[0]
             if ctype in ("application/zip", "application/x-zip-compressed", "application/octet-stream"):
                 body = f"archivo ZIP de {len(r.content) / 1e6:.1f} MB disponible"
@@ -191,17 +193,32 @@ def api_healthcheck(session: requests.Session, api_key: str) -> bool:
         return False
 
 
+# Variantes de encabezados, en orden. El 1er intento (Accept: application/zip) dio HTTP 406 en el PC:
+# el servidor rechaza un Accept que no coincide exactamente con su tipo de archivo, y algunos
+# firewalls públicos rechazan clientes que se identifican como scripts.
+BULK_HEADER_VARIANTS = [
+    ("Accept: */*", {"Accept": "*/*"}),
+    ("Accept: */* + navegador", {"Accept": "*/*", "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/130.0 Safari/537.36")}),
+]
+
+
 def download_bulk(session: requests.Session) -> tuple[str, bytes]:
-    """Descarga el primer ZIP disponible de PSD Online. Devuelve (url, contenido)."""
+    """Descarga el primer ZIP disponible de PSD Online probando variantes de encabezados."""
     errors = []
     for url in BULK_URLS:
-        try:
-            r = session.get(url, timeout=(10, 300), headers={"Accept": "application/zip"})
-            if r.status_code == 200 and r.content[:2] == b"PK":      # firma de un ZIP
-                return url, r.content
-            errors.append(f"{url.rsplit('/', 1)[1]} → HTTP {r.status_code}")
-        except requests.RequestException as e:
-            errors.append(f"{url.rsplit('/', 1)[1]} → {type(e).__name__}")
+        for label, headers in BULK_HEADER_VARIANTS:
+            try:
+                r = session.get(url, timeout=(10, 300), headers=headers)
+                if r.status_code == 200 and r.content[:2] == b"PK":      # firma de un ZIP
+                    log.info("Descarga masiva OK: %s (%s)", url, label)
+                    print(f"  descarga OK con '{label}'")
+                    return url, r.content
+                what = "no es un ZIP" if r.status_code == 200 else f"HTTP {r.status_code}"
+                errors.append(f"{url.rsplit('/', 1)[1]} [{label}] → {what}")
+            except requests.RequestException as e:
+                errors.append(f"{url.rsplit('/', 1)[1]} [{label}] → {type(e).__name__}")
     raise RuntimeError("No se pudo descargar PSD Online: " + "; ".join(errors))
 
 

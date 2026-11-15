@@ -128,7 +128,7 @@ def test_probe_masks_key(capsys):
             return r
     ep.probe(Echo(), "test-key")
     out = capsys.readouterr().out
-    assert "test-key" not in out and "***" in out and out.count("[500]") == 5 + len(ep.BULK_URLS)
+    assert "test-key" not in out and "***" in out and out.count("[500]") == 5 + len(ep.BULK_URLS) * len(ep.BULK_HEADER_VARIANTS)
 
 
 # ---------------------------------------------------------------- descarga masiva
@@ -193,3 +193,31 @@ def test_bulk_tries_next_url():
 def test_read_pork_only():
     df = ep.read_pork_from_zip(make_zip())
     assert set(df["commoditydescription"]) == {"Meat, Swine"} and len(df) == 4
+
+
+class PickyServer(ApiDownBulkUp):
+    """Simula el servidor real: 406 salvo que el cliente se identifique como navegador."""
+    def get(self, url, timeout, headers):
+        self.calls.append((url, dict(headers)))
+        if "/OpenData/" in url:
+            return BulkResp(500, b"{}", "application/json")
+        if "Mozilla" not in headers.get("User-Agent", ""):
+            return BulkResp(406, b"Not Acceptable", "text/html")
+        return BulkResp(200, make_zip())
+
+
+def test_bulk_retries_with_other_headers_on_406(capsys):
+    s = PickyServer()
+    stats = ep.run(1990, 1990, session=s, pause=0)
+    assert stats["records"] == 4
+    assert "descarga OK con 'Accept: */* + navegador'" in capsys.readouterr().out
+
+
+def test_bulk_rejects_html_disguised_as_success():
+    class HtmlInstead(ApiDownBulkUp):
+        def get(self, url, timeout, headers):
+            if "/OpenData/" in url:
+                return BulkResp(500, b"{}", "application/json")
+            return BulkResp(200, b"<html>mantenimiento</html>", "text/html")
+    with pytest.raises(RuntimeError, match="no es un ZIP"):
+        ep.run(1990, 1990, session=HtmlInstead(), pause=0)
