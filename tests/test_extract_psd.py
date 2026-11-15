@@ -100,3 +100,30 @@ def test_invalid_key_fails_fast():
     with pytest.raises(PermissionError):
         ep.run(1990, 1990, session=s, pause=0)
     assert len(s.calls) == 1
+
+
+def test_missing_catalog_does_not_stop_extraction(capsys):
+    """Si un catálogo da 500 de forma persistente, se sigue con los datos."""
+    class CatalogDown(FakeSession):
+        def get(self, url, timeout, headers):
+            if url.endswith("/commodities"):
+                self.calls.append((url, headers))
+                return Resp(500)
+            return super().get(url, timeout, headers)
+    s = CatalogDown()
+    stats = ep.run(1990, 1990, session=s, pause=0)
+    assert stats["missing_refs"] == ["commodities"]
+    assert any("/commodity/0113000/country/all/year/1990" in u for u, _ in s.calls)   # usó el código por defecto
+    assert "NO DISPONIBLE" in capsys.readouterr().out
+
+
+def test_probe_masks_key(capsys):
+    class Echo(FakeSession):
+        def get(self, url, timeout, headers):
+            r = Resp(500)
+            r.text = f"error con llave test-key en {url}"
+            r.headers = {"Content-Type": "text/html"}
+            return r
+    ep.probe(Echo(), "test-key")
+    out = capsys.readouterr().out
+    assert "test-key" not in out and "***" in out and out.count("[500]") == 5

@@ -58,12 +58,43 @@ def _is_retryable(exc: BaseException) -> bool:
 def get_json(session: requests.Session, path: str, api_key: str):
     resp = session.get(f"{BASE}/{path}", timeout=TIMEOUT, headers={"API_KEY": api_key, "Accept": "application/json"})
     if resp.status_code == 429 or resp.status_code >= 500:
-        log.warning("HTTP %s en %s; se reintenta", resp.status_code, path)
-        raise RetryableHTTPError(f"HTTP {resp.status_code}")
+        log.warning("HTTP %s en %s; se reintenta · respuesta: %s", resp.status_code, path, _snippet(resp))
+        raise RetryableHTTPError(f"HTTP {resp.status_code} en {path}: {_snippet(resp)}")
     if resp.status_code in (401, 403):
         raise PermissionError("USDA rechazó la llave (401/403). Revisa USDA_FAS_API_KEY en .env")
     resp.raise_for_status()
     return resp.json()
+
+
+def _snippet(resp, n: int = 200) -> str:
+    """Primeros caracteres del cuerpo de la respuesta (para diagnosticar errores del servidor)."""
+    try:
+        return " ".join(str(resp.text).split())[:n]
+    except Exception:
+        return "(sin cuerpo)"
+
+
+def probe(session: requests.Session, api_key: str) -> None:
+    """Diagnóstico: prueba variantes UNA vez cada una y muestra código + mensaje. No guarda nada."""
+    year = date.today().year - 1
+    variants = [
+        ("catálogo commodities, llave en encabezado", f"{BASE}/commodities", {"API_KEY": api_key}),
+        ("catálogo countries, llave en encabezado", f"{BASE}/countries", {"API_KEY": api_key}),
+        (f"datos cerdo {year}, llave en encabezado", f"{BASE}/commodity/{FALLBACK_PORK_CODE}/country/all/year/{year}",
+         {"API_KEY": api_key}),
+        (f"datos cerdo {year}, llave como parámetro", f"{BASE}/commodity/{FALLBACK_PORK_CODE}/country/all/year/{year}"
+         f"?api_key={api_key}", {}),
+        ("catálogo commodities, SIN llave (debe dar 401/403)", f"{BASE}/commodities", {}),
+    ]
+    print("Diagnóstico de la API de USDA (1 intento por variante):")
+    for label, url, headers in variants:
+        try:
+            r = session.get(url, timeout=TIMEOUT, headers={**headers, "Accept": "application/json"})
+            ctype = r.headers.get("Content-Type", "?").split(";")[0]
+            body = _snippet(r).replace(api_key, "***") if api_key else _snippet(r)
+            print(f"  [{r.status_code}] {label} · {ctype} · {body[:160]}")
+        except requests.RequestException as e:
+            print(f"  [ERR] {label} · {type(e).__name__}: {e}")
 
 
 def _norm(record: dict) -> dict:
@@ -150,7 +181,15 @@ def run(start_year: int, end_year: int, dry_run: bool = False,
 
     with track_batch(SOURCE, {"start_year": start_year, "end_year": end_year}) as batch:
         for name in REFERENCE:
-            payload = get_json(session, name, api_key)
+            # Los catálogos solo traducen códigos: si fallan, se sigue con los datos (lo importante)
+            try:
+                payload = get_json(session, name, api_key)
+            except RetryableHTTPError as e:
+                log.warning("Catálogo %s no disponible (%s); se continúa sin él", name, e)
+                print(f"  catálogo {name:<20} NO DISPONIBLE (se continúa)")
+                refs[name] = []
+                stats.setdefault("missing_refs", []).append(name)
+                continue
             refs[name] = payload if isinstance(payload, list) else payload.get("data", [])
             stats["new_raw"] += save(engine, batch.batch_id, name, payload)
             stats["calls"] += 1
@@ -185,8 +224,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--start-year", type=int, default=settings.start_year)
     p.add_argument("--end-year", type=int, default=date.today().year + 1, help="incluye la proyección")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--probe", action="store_true", help="diagnóstico de la API, no guarda nada")
     a = p.parse_args(argv)
     print("=== Pork to China · Fase 4.3a · extracción USDA PSD ===\n")
+    if a.probe:
+        if not settings.usda_fas_api_key:
+            raise SystemExit("Falta USDA_FAS_API_KEY en .env")
+        probe(requests.Session(), settings.usda_fas_api_key)
+        return 0
     run(a.start_year, a.end_year, dry_run=a.dry_run)
     return 0
 

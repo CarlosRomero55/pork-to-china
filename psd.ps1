@@ -1,7 +1,10 @@
 ﻿# psd.ps1 · Fase 4.3a · Pork to China
 # Descarga el balance de carne de cerdo de USDA PSD (todos los países + mundo) a bronze
 # y muestra el reporte de descubrimiento con la estructura real de la API.
-# Uso (en PowerShell, dentro de D:\pork-to-china):   .\psd.ps1
+# Uso (en PowerShell, dentro de D:\pork-to-china):
+#   .\psd.ps1          extracción normal
+#   .\psd.ps1 -Probe   diagnóstico de la API (no guarda nada)
+param([switch]$Probe)
 
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
@@ -11,6 +14,7 @@ $env:PYTHONUTF8 = "1"
 $venvPy = ".\.venv\Scripts\python.exe"
 if (-not (Test-Path $venvPy)) { Write-Host "Primero ejecuta .\setup.ps1" -ForegroundColor Red; exit 1 }
 
+if ($Probe) { & $venvPy -m src.extract_psd --probe; exit $LASTEXITCODE }
 & $venvPy -m src.extract_psd
 if ($LASTEXITCODE -ne 0) { Write-Host "`nLa extracción de USDA falló; pégale esta salida a Claude (y las últimas líneas de logs\pipeline.log)." -ForegroundColor Red; exit 1 }
 Write-Host "`nExtracción USDA completa. Pégale esta salida a Claude." -ForegroundColor Green
