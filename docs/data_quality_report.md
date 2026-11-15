@@ -1,6 +1,6 @@
 # Reporte de calidad de datos · Comtrade (bronze → silver)
 
-_Generado automáticamente por `src/validate.py` el 2026-11-15 13:03. No editar a mano._
+_Generado automáticamente por `src/validate.py` el 2026-11-15 13:56. No editar a mano._
 
 ## 1. Antes vs después
 

@@ -5,6 +5,9 @@
 
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
+# Python escribe en UTF-8 y PowerShell lo lee en UTF-8 (tildes y símbolos correctos, también con tuberías)
+$env:PYTHONUTF8 = "1"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Write-Host "=== Pork to China · setup ===" -ForegroundColor Cyan
 
 # Función auxiliar: detiene el script si el último comando externo falló
