@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** 4.3a (USDA PSD → bronze) listo → Carlos corre `.\psd.ps1`
+- **Paso:** 4.3a cerrado (USDA PSD en bronze por descarga masiva) → siguiente 4.3b (silver de PSD)
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 4.3a-e · Corrida real OK con 'Accept: */*': psd_livestock_csv.zip (0,8 MB), 26.881 registros de cerdo (código 0113000), 98 países, 1960–2027. Columnas: commoditycode, countrycode (códigos FAS: CH, BR...), marketyear, attributeid/description, unitid/description, value. China: producción 2025 = 59.380 mil t CWE (coincide con NBS 59,38 Mt); importaciones 1.186 (2025) → 840 (2026e) → 820 (2027p) = 1,4% del consumo. Ojo: 'Imports' de PSD es carne CWE sin vísceras → no se suma con Comtrade
 - 2026-11-15 · 4.3a-d · Descarga masiva dio HTTP 406 (los archivos existen; el servidor rechaza el encabezado Accept: application/zip). Ahora prueba Accept: */* y, si sigue el 406, identificación de navegador; valida firma ZIP. 61/61 pytest
 - 2026-11-15 · 4.3a-c · Diagnóstico en el PC: sin llave 403 (la puerta revisa la llave), llave como parámetro 403, llave en encabezado 500 en TODAS las rutas → llave válida, falla interna de USDA. Plan B automático: verificación rápida de la API (1 llamada) y, si falla, descarga masiva de PSD Online (psd_livestock_csv.zip → bronze.raw_file), filtra 'Meat, Swine'. 59/59 pytest
 - 2026-11-15 · 4.3a-b · Primera corrida real: HTTP 500 persistente en el catálogo commodities de USDA (domingo; posible caída o cambio). Se agregó modo diagnóstico (--probe, llave enmascarada) y catálogos opcionales. 55/55 pytest
@@ -92,4 +93,4 @@
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
 
 ## Siguiente paso
-**Paso 4.3a:** Carlos corre `.\psd.ps1` (usará la descarga masiva si la API sigue caída) y pega el reporte de descubrimiento. Luego: 4.3b silver de PSD (migración 003 + regla de balance oferta = demanda), FAOSTAT y aranceles NMF por línea HS; después Fase 7 (gold).
+**Paso 4.3b:** silver de PSD (migración 003: psd_balance + mapa de códigos FAS → países; regla R12 oferta = demanda). Luego 4.3c aranceles NMF por línea HS y FAOSTAT; después Fase 7 (gold). Luego: 4.3b silver de PSD (migración 003 + regla de balance oferta = demanda), FAOSTAT y aranceles NMF por línea HS; después Fase 7 (gold).

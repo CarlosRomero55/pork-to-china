@@ -33,6 +33,8 @@
 | 24 | Represalia de China contra Canadá | 25% adicional a carne y vísceras de cerdo canadienses desde el 20-mar-2025; el acuerdo Canadá–China de ene-2026 NO incluyó al cerdo (sigue vigente) | 🆕 ✅ | EY (31-mar-2025); Farms.com y Western Producer (ene-2026) |
 | 25 | China en Comtrade | Importaciones mensuales publicadas solo hasta 2024-12 (getDa) → se usan datos espejo (ADR-008) | 🆕 | API getDa de Comtrade (13-nov-2026) |
 | 26 | Conciliación directo vs espejo 2018–2024 | Peso 0,992 · valor CIF/FOB 1,037 (ponderados) | 🆕 | Cálculo propio (harmonize.py) |
+| 27 | Balance de cerdo de China (USDA PSD) | Producción 2025 59.380 mil t CWE (= NBS); importaciones 1.186 (2025) → 840 (2026e) → 820 (2027p), 1,4% del consumo | 🆕 ✅ | USDA FAS PSD Online, psd_livestock_csv.zip (15-nov-2026) |
+| 28 | API de USDA PSD | HTTP 500 en todas las rutas con llave válida (nov-2026) → se usa la descarga masiva | 🆕 | Diagnóstico propio (extract_psd --probe) |
 | 23 | Benchmark Colombia | La OMSA reconoció zonas libres de PPC en 2026 | 🆕 | OMSA (2026) |
 
 ## B. Supuestos (a completar en la Fase 10, con rango mín/base/máx)
