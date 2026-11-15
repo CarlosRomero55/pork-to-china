@@ -2,8 +2,8 @@
 
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
-- **Fase:** 6 – Validación y calidad → **cerrada** (verificada en el PC)
-- **Paso:** siguiente 4.3 (USDA PSD, FAOSTAT, aranceles NMF por línea HS)
+- **Fase:** 4.3 – Fuentes complementarias
+- **Paso:** 4.3a (USDA PSD → bronze) listo → Carlos corre `.\psd.ps1`
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 4.3a · extract_psd.py: API oficial apps.fas.usda.gov/OpenData (encabezado API_KEY); código del cerdo buscado en el catálogo; 24 consultas (4 catálogos + 10 años × país/mundo, 2018–2027); solo bronze + reporte de descubrimiento para diseñar silver con la estructura real. 53/53 pytest
 - 2026-11-15 · 6.2 · validate.ps1 OK en el PC: 280 filas marcadas, 10 OK · 1 alerta (R08) · 0 errores, 48/48 pytest; reporte regenerado en docs/
 - 2026-11-15 · 6.1b · Bug en el PC: UnicodeEncodeError (cp1252) al canalizar la salida de Python con | Select-String. Corrección doble: src/__init__.py fuerza UTF-8 en stdout/stderr y los 6 .ps1 fijan PYTHONUTF8=1 y la codificación de consola. Reproducido y verificado con PYTHONIOENCODING=cp1252
 - 2026-11-15 · 6.1 · Migración 002 (quality_flag SET en silver.trade_flow); clean.py combina outlier estadístico (IQR-log por HS×año) + rango plausible de negocio (carne 0,5–15, vísceras 0,3–10, procesado 0,5–100 USD/kg); validate.py con 11 reglas (R01–R11) y reporte automático docs/data_quality_report.md. Con datos reales: 10 OK, 1 alerta (R08: picos 2020–2021 = peste porcina africana, reales), 0 errores. Marcas: 152 atípicos, 5 sin peso, 128 con peso estimado por la fuente. Hallazgo: España HS 020312 en 2018 a 0,27–0,48 USD/kg = probable error de clasificación del exportador. 48/48 pytest
@@ -88,4 +89,4 @@
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
 
 ## Siguiente paso
-**Paso 4.3:** extractores de USDA PSD (producción/consumo/importaciones de cerdo), FAOSTAT (producción de Ecuador) y aranceles NMF de China por línea HS. Luego Fase 7 (modelo gold).
+**Paso 4.3a:** Carlos corre `.\psd.ps1` y pega el reporte de descubrimiento. Luego: 4.3b silver de PSD (migración 003 + regla de balance oferta = demanda), FAOSTAT y aranceles NMF por línea HS; después Fase 7 (gold).
