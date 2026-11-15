@@ -227,7 +227,8 @@ def read_pork_from_zip(content: bytes) -> pd.DataFrame:
     with zipfile.ZipFile(io.BytesIO(content)) as z:
         name = next(n for n in z.namelist() if n.lower().endswith(".csv"))
         with z.open(name) as f:
-            df = pd.read_csv(f, dtype=str, encoding="utf-8-sig")
+            # keep_default_na=False: el código de país "NA" (Antillas Neerlandesas) NO es un dato faltante
+            df = pd.read_csv(f, dtype=str, encoding="utf-8-sig", keep_default_na=False, na_values=[""])
     df.columns = [c.lower().replace("_", "").replace(" ", "") for c in df.columns]
     desc = df.get("commoditydescription", pd.Series("", index=df.index)).str.lower()
     is_pork = (desc.str.contains("swine") | desc.str.contains("pork")) & desc.str.contains("meat")

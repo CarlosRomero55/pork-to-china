@@ -180,10 +180,36 @@ def r11_flags_consistent(df: pd.DataFrame) -> RuleResult:
 ALERT_NOTES = {
     "R07": "Un exportador grande con más de 10% de diferencia entre su dato y el de China: revisar tránsito por "
            "terceros países (por ejemplo, Hong Kong) o desfase de fechas antes de usar su espejo.",
+    "R12": "Algún balance de USDA no cierra en la propia fuente (p. ej. Bielorrusia 2023: producción + "
+           "importaciones = 395 mil t frente a una oferta total publicada de 377). Son inconsistencias de USDA, "
+           "no del proceso; no afectan el análisis si el país no es proveedor de China ni competidor de Ecuador.",
     "R08": "Los picos se concentran en 2020–2021: la peste porcina africana redujo la piara china y las "
            "importaciones llegaron a un récord (~4,3 Mt en 2020). Son datos reales, no errores; por eso las "
            "comparaciones de 2025 se hacen contra 2024 y no contra el promedio histórico.",
 }
+
+def r12_psd_balance(conn, tolerance: float = 0.005) -> RuleResult:
+    """USDA PSD: existencias iniciales + producción + importaciones = oferta total
+                 = consumo + exportaciones + existencias finales (± tolerancia)."""
+    rows = conn.execute(text(f"""
+        SELECT psd_code, market_year, attribute, value FROM {SILVER}.psd_balance
+        WHERE unit LIKE '%CWE%'""")).all()
+    if not rows:
+        return RuleResult("R12", "USDA: oferta = demanda en cada balance", "alerta", True, 0, "sin datos de USDA todavía")
+    b = (pd.DataFrame(rows, columns=["psd_code", "year", "attribute", "value"])
+         .assign(value=lambda d: pd.to_numeric(d["value"]))
+         .pivot_table(index=["psd_code", "year"], columns="attribute", values="value", aggfunc="last").fillna(0))
+    get = lambda c: b[c] if c in b.columns else 0
+    supply = get("Beginning Stocks") + get("Production") + get("Imports")
+    demand = get("Domestic Consumption") + get("Exports") + get("Ending Stocks")
+    scale = supply.abs().clip(lower=1)
+    bad = b[((supply - demand).abs() / scale > tolerance) |
+            ((supply - get("Total Supply")).abs() / scale > tolerance)]
+    detail = f"{len(b)} balances país×año revisados (±{es_num(tolerance * 100, 1)}%)"
+    if len(bad):
+        detail += " · ej.: " + ", ".join(f"{c} {y}" for c, y in bad.index[:4])
+    return RuleResult("R12", "USDA: oferta = demanda en cada balance", "alerta", bad.empty, len(bad), detail)
+
 
 # ---------------------------------------------------------------- reporte
 
@@ -215,7 +241,7 @@ def flag_counts(df: pd.DataFrame) -> dict[str, int]:
 def write_report(results, before_after, coverage, recon, implausible, flags) -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = [
-        "# Reporte de calidad de datos · Comtrade (bronze → silver)",
+        "# Reporte de calidad de datos · Comtrade y USDA PSD (bronze → silver)",
         "",
         f"_Generado automáticamente por `src/validate.py` el {now}. No editar a mano._",
         "",
@@ -288,12 +314,13 @@ def main() -> int:
         df = load_silver(conn)
         df = df[df["source"].isin(["comtrade", "comtrade_mirror"])]
         scd2 = r10_scd2(conn)
+        psd = r12_psd_balance(conn)
 
     r05, implausible = r05_plausible_unit_value(df)
     r07, recon = r07_mirror_reconciliation(df)
     results = [r01_completeness(df, n_bronze, len(quarantine)), r02_quarantine(len(quarantine)),
                r03_partners_vs_world(df), r04_monthly_continuity(df), r05, r06_missing_weight(df),
-               r07, r08_spikes(df), r09_no_future(df), scd2, r11_flags_consistent(df)]
+               r07, r08_spikes(df), r09_no_future(df), scd2, r11_flags_consistent(df), psd]
 
     print(f"{'Regla':<6}{'Estado':<8}{'Filas':>7}  Descripción · detalle")
     for r in results:

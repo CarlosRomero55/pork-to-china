@@ -1,6 +1,6 @@
-# Reporte de calidad de datos · Comtrade (bronze → silver)
+# Reporte de calidad de datos · Comtrade y USDA PSD (bronze → silver)
 
-_Generado automáticamente por `src/validate.py` el 2026-11-15 13:56. No editar a mano._
+_Generado automáticamente por `src/validate.py` el 2026-11-15 18:59. No editar a mano._
 
 ## 1. Antes vs después
 
@@ -36,10 +36,12 @@ Ninguna fila se borra: las dudosas se **marcan** en `quality_flag` y gold decide
 | R09 | Sin periodos en el futuro | ✅ OK | 0 | último periodo 2026-09 |
 | R10 | Medidas arancelarias sin vigencias solapadas (SCD2) | ✅ OK | 0 | cada medida tiene una sola tasa vigente por fecha |
 | R11 | Marcas de calidad coherentes con los datos | ✅ OK | 0 | quality_flag = missing_weight ⇔ peso NULL |
+| R12 | USDA: oferta = demanda en cada balance | ⚠️ ALERTA | 1 | 316 balances país×año revisados (±0,5%) · ej.: BO 2023 |
 
 ### Interpretación de las alertas
 
 - **R08 · Picos mensuales > 3× la mediana:** Los picos se concentran en 2020–2021: la peste porcina africana redujo la piara china y las importaciones llegaron a un récord (~4,3 Mt en 2020). Son datos reales, no errores; por eso las comparaciones de 2025 se hacen contra 2024 y no contra el promedio histórico.
+- **R12 · USDA: oferta = demanda en cada balance:** Algún balance de USDA no cierra en la propia fuente (p. ej. Bielorrusia 2023: producción + importaciones = 395 mil t frente a una oferta total publicada de 377). Son inconsistencias de USDA, no del proceso; no afectan el análisis si el país no es proveedor de China ni competidor de Ecuador.
 
 ### Hallazgos de la revisión de valores unitarios
 

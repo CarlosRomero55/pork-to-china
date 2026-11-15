@@ -1,5 +1,5 @@
 ﻿# validate.ps1 · Fase 6 · Pork to China
-# Aplica migraciones, recarga silver con las marcas de calidad, valida las 11 reglas,
+# Aplica migraciones, recarga silver (Comtrade + USDA PSD) con las marcas de calidad, valida las 12 reglas,
 # regenera docs\data_quality_report.md y corre todas las pruebas.
 # Uso (en PowerShell, dentro de D:\pork-to-china):   .\validate.ps1
 
@@ -16,6 +16,9 @@ if ($LASTEXITCODE -ne 0) { Write-Host "`nLas migraciones fallaron; pégale esta 
 
 & $venvPy -m src.harmonize | Select-String -Pattern "^\[1/4\]|^\[2/4\]|Todo listo"
 if ($LASTEXITCODE -ne 0) { Write-Host "`nLa transformación falló; pégale esta salida a Claude." -ForegroundColor Red; exit 1 }
+
+& $venvPy -m src.harmonize_psd | Select-String -Pattern "psd_balance|Ecuador|Todo listo"
+if ($LASTEXITCODE -ne 0) { Write-Host "`nLa transformación de USDA falló; pégale esta salida a Claude." -ForegroundColor Red; exit 1 }
 
 Write-Host ""
 & $venvPy -m src.validate
