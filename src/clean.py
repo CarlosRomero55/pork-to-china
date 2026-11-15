@@ -14,6 +14,11 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
+# Rango plausible de USD/kg por partida (calibrado con la distribución real 2018–2026).
+# Fuera de esto casi siempre hay un error de clasificación o un envío no representativo (muestras).
+PLAUSIBLE_USD_KG = {"0203": (0.5, 15.0), "0206": (0.3, 10.0), "0210": (0.5, 100.0)}
+MIN_WEIGHT_KG = 1000       # envíos menores a 1 t no se evalúan (valores unitarios erráticos)
+
 COLUMNS = ["reporter_code", "partner_code", "hs_code", "period", "flow_type",
            "net_weight_kg", "value_usd", "weight_estimated"]
 
@@ -50,21 +55,30 @@ def parse_comtrade(payload: dict) -> pd.DataFrame:
 
 def flag_unit_value_outliers(df: pd.DataFrame, k: float = 3.0) -> pd.DataFrame:
     """
-    Marca filas con USD/kg atípico DENTRO de su grupo (línea HS × año), usando el rango
-    intercuartílico sobre el logaritmo: [Q1 − k·IQR, Q3 + k·IQR].
-    El log hace que "el doble" y "la mitad" pesen igual; k=3 solo marca casos extremos.
-    No borra nada: agrega unit_value_usd_kg y is_outlier (se decide qué hacer en la Fase 6).
+    Marca filas con USD/kg atípico si se cumple CUALQUIERA de dos criterios:
+      1. Estadístico: fuera de [Q1 − k·IQR, Q3 + k·IQR] sobre el logaritmo, dentro de su grupo
+         (línea HS × año). El log hace que "el doble" y "la mitad" pesen igual; k=3 = solo extremos.
+      2. De negocio: fuera del rango plausible de su partida (PLAUSIBLE_USD_KG). Atrapa errores
+         sistemáticos que el criterio 1 no ve porque se repiten todo el año (p. ej. una mala
+         clasificación que se parece a sí misma).
+    No borra nada: agrega unit_value_usd_kg y is_outlier.
     """
     df = df.copy()
     df["unit_value_usd_kg"] = df["value_usd"] / df["net_weight_kg"]
     df["is_outlier"] = False
-    valid = df["unit_value_usd_kg"].gt(0) & df["net_weight_kg"].ge(1000)   # ignora envíos < 1 t
+    valid = df["unit_value_usd_kg"].gt(0) & df["net_weight_kg"].ge(MIN_WEIGHT_KG)
     logs = np.log(df.loc[valid, "unit_value_usd_kg"])
     keys = [df.loc[valid, "hs_code"], pd.to_datetime(df.loc[valid, "period"]).dt.year]
     q1 = logs.groupby(keys).transform(lambda s: s.quantile(0.25))
     q3 = logs.groupby(keys).transform(lambda s: s.quantile(0.75))
     iqr = q3 - q1
     df.loc[valid, "is_outlier"] = (logs < q1 - k * iqr) | (logs > q3 + k * iqr)
+
+    hs4 = df.loc[valid, "hs_code"].str[:4]
+    lo = hs4.map(lambda h: PLAUSIBLE_USD_KG.get(h, (0, float("inf")))[0])
+    hi = hs4.map(lambda h: PLAUSIBLE_USD_KG.get(h, (0, float("inf")))[1])
+    uv = df.loc[valid, "unit_value_usd_kg"]
+    df.loc[valid, "is_outlier"] = df.loc[valid, "is_outlier"] | (uv < lo) | (uv > hi)
     return df
 
 

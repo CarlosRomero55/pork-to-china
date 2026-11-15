@@ -26,7 +26,7 @@ from src.db import BRONZE, SILVER, get_engine, upsert_df
 from src.logging_setup import get_logger
 
 log = get_logger(__name__)
-UPDATE_COLS = ["net_weight_kg", "value_usd", "batch_id"]
+UPDATE_COLS = ["net_weight_kg", "value_usd", "quality_flag", "batch_id"]
 CHINA = 156
 
 
@@ -83,9 +83,21 @@ def build_flows(conn) -> tuple[pd.DataFrame, pd.DataFrame]:
     return df[~bad].copy(), df[bad].copy()
 
 
+def quality_flags(df: pd.DataFrame) -> pd.Series:
+    """Texto para la columna SET quality_flag (varias marcas separadas por coma, o NULL)."""
+    parts = pd.DataFrame({
+        "outlier_unit_value": df["is_outlier"].fillna(False),
+        "missing_weight": df["net_weight_kg"].isna(),
+        "weight_estimated_by_source": df["weight_estimated"].fillna(False),
+    })
+    flags = parts.apply(lambda r: ",".join(c for c in parts.columns if r[c]), axis=1)
+    return flags.where(flags != "", None)
+
+
 def load(conn, df: pd.DataFrame):
+    df = df.assign(quality_flag=quality_flags(df))
     cols = ["reporter_id", "partner_id", "hs_code", "period", "flow_type",
-            "net_weight_kg", "value_usd", "source_id", "batch_id"]
+            "net_weight_kg", "value_usd", "quality_flag", "source_id", "batch_id"]
     out = df[cols].astype({"reporter_id": int, "partner_id": int, "source_id": int, "batch_id": int})
     return upsert_df(conn, out, SILVER, "trade_flow", update_cols=UPDATE_COLS)
 

@@ -66,3 +66,11 @@ def test_quality_summary_counts():
                                                            rec(partnerCode=76, isNetWgtEstimated=True)]}))
     q = quality_summary(df)
     assert q["rows"] == 3 and q["missing_weight"] == 1 and q["estimated_weight"] == 1
+
+
+def test_implausible_price_is_flagged_even_if_consistent():
+    """Un error que se repite todo el año (p. ej. mala clasificación) no es 'raro' para el IQR,
+    pero sí es imposible para el producto: el rango de negocio lo atrapa."""
+    rows = [rec(cmdCode="020312", netWgt=100000, primaryValue=30000) for _ in range(12)]   # 0,30 USD/kg
+    df = flag_unit_value_outliers(parse_comtrade({"data": rows}))
+    assert df["is_outlier"].all()
