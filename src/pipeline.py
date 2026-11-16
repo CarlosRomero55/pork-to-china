@@ -2,7 +2,7 @@
 pipeline.py · Fase 8 · Orquestación de punta a punta
 
 Corre las etapas en orden y se detiene en la primera que falla:
-    migraciones → [extracción] → silver Comtrade → silver USDA → validación → gold → pruebas
+    migraciones → [extracción] → silver Comtrade → silver USDA → validación → gold → consultas → pruebas
 
 - Cada etapa corre como subproceso aislado (`python -m src.<módulo>`): un error en una etapa
   no deja estado a medias en las demás, y su código de salida decide si se continúa.
@@ -56,6 +56,7 @@ STAGES: tuple[Stage, ...] = (
     Stage("silver_psd", ("-m", "src.harmonize_psd"), "USDA PSD: bronze → silver"),
     Stage("validate", ("-m", "src.validate"), "Validación de calidad (12 reglas)"),
     Stage("gold", ("-m", "src.build_gold"), "Silver → gold (esquema estrella)"),
+    Stage("queries", ("-m", "src.run_queries"), "Consultas de negocio → docs/queries.md"),
     Stage("tests", ("-m", "pytest", "tests", "-q", "-p", "no:warnings"), "Suite de pruebas"),
 )
 

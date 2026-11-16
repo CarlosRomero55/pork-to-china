@@ -67,6 +67,6 @@ def test_stage_selection():
     names = lambda st: [s.name for s in st]
     assert "extract_comtrade" not in names(pl.select_stages(False, None))
     assert names(pl.select_stages(True, None))[:2] == ["extract_comtrade", "extract_psd"]
-    assert names(pl.select_stages(False, "validate")) == ["validate", "gold", "tests"]
+    assert names(pl.select_stages(False, "validate")) == ["validate", "gold", "queries", "tests"]
     with pytest.raises(SystemExit):
         pl.select_stages(False, "no_existe")
