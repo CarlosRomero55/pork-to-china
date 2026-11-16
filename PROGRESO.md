@@ -3,7 +3,8 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** FASE 9 CERRADA (12 consultas + vistas del tablero, verificado en el PC) → siguiente Fase 10 (modelo analítico y financiero). Faltan 7 fases (10–16)
+- **Paso:** 10.1 listo en la rama `feat/fase-10-modelo-financiero` → Carlos corre `.\pipeline.ps1`; si sale OK se fusiona. Faltan 7 fases (10–16)
+- **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
@@ -25,6 +26,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-16 · 10.1 · (rama feat/fase-10-modelo-financiero) Migración 011: supuestos versionados de flete reefer 40' por ruta, carga, seguro y FOB de Ecuador; producción de Ecuador v2 (213–223,65–240 mil t; la v1 230–240 quedó sobre las cifras con fuente). src/landed_cost.py: CIF = (FOB + flete)·(1 + seguro); landed = CIF·(1 + arancel efectivo); sin IVA (igual para todos); FOB máximo de Ecuador para igualar a cada competidor (inverso de la fórmula); sensibilidad mín/base/máx. Nueva etapa del pipeline. Pruebas 2× más rápidas: harmonize filtra por año (pruebas solo 2098–2099), suite 5,2 → 2,8 s. Hallazgos 020649: Chile 1,79 USD/kg en destino; Ecuador con acuerdo 1,96 (−0,17 vs Chile, por el 9,6%); Canadá 2,26; España 2,39–2,69; EE. UU. 3,02; Brasil 3,54. Para igualar a Chile, Ecuador debe vender a 1,44 FOB (10% bajo Chile); para igualar a España le basta 1,99. El orden no cambia con el flete en mínimo o máximo. 110/110 pytest
 - 2026-11-16 · 9.2-v · pipeline.ps1 en el PC: 7/7 OK en 51 s (migración 010). Fusionado a main. FASE 9 CERRADA
 - 2026-11-16 · 9.2 · (rama feat/fase-09-consultas-sql-2) Consultas q07–q12 (estacionalidad, precio FOB vs Chile con PERCENT_RANK, quinto cuarto, arancel ponderado por volumen, cambios de líder con gaps-and-islands, tamaño del SAM). Migración 010: tabla mirror_coverage + 4 vistas v_dash_* para Streamlit. SEGUNDO SESGO DETECTADO: en 2026-09 solo reportaron Brasil y Chile (rezagos de publicación) y Chile "lideraba" las vísceras → regla de mes completo = reportaron los proveedores con ≥ 2% del volumen de los 12 meses previos, salvo uno (104/105 meses completos; Francia no reporta desde 2026-01). Primera versión contaba todos los países y fallaba por Alemania/Polonia esporádicos. Hallazgos: precio FOB de referencia Chile 1,60 USD/kg vísceras y 1,35 carne; arancel ponderado de vísceras 19,1% → 26,1% (2025); SAM 2025 = 1,85 Mt / 3.672 MUSD, 26,8% en manos de EE. UU.+Canadá; 1% del SAM ≈ 8% de la producción de Ecuador. 100/100 pytest
 - 2026-11-16 · 9.1-v · pipeline.ps1 en el PC: 7/7 OK en 69 s (migración 009, etapa queries). Fusionado a main
@@ -116,4 +118,4 @@
 - [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Fase 10:** modelo analítico — desvío de comercio formal, costo puesto en China (FOB 1,60 USD/kg de referencia + flete + seguro + arancel efectivo), TAM–SAM–SOM con los 24 escenarios, VAN/TIR de AgroPorc. Arranca con 2–3 preguntas de decisión.
+**Paso 10.2:** TAM–SAM–SOM por escenario (A/B/C × autosuficiencia) con el volumen base de 5.000 t/año, y gold.fact_landed_cost por escenario. Luego 10.3: flujo de caja, VAN/TIR y payback de AgroPorc (inversión con fuentes públicas, tasa 12%).

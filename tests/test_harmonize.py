@@ -13,6 +13,9 @@ from src.harmonize import build_flows, load, reconciliation
 from src.migrate import migrate
 
 
+TEST_YEARS = {2098, 2099}       # años ficticios: las pruebas no releen todo bronze
+
+
 def rec(rep, par, flow, wgt, val, hs="020649", period="209901"):
     return {"period": period, "reporterCode": rep, "partnerCode": par, "cmdCode": hs, "flowCode": flow,
             "partner2Code": 0, "customsCode": "C00", "motCode": 0,
@@ -41,7 +44,7 @@ def _rows_2099(df):
 
 
 def test_build_separates_direct_and_mirror(conn):
-    good, quarantine = build_flows(conn)
+    good, quarantine = build_flows(conn, TEST_YEARS)
     g = _rows_2099(good)
     assert set(g["source"]) == {"comtrade", "comtrade_mirror"}
     assert len(g[g["source"] == "comtrade"]) == 3 and len(g[g["source"] == "comtrade_mirror"]) == 2
@@ -53,12 +56,12 @@ def test_unknown_country_goes_to_quarantine(conn):
     q = ec.Query("CHN", (156,), "M", None, 2098)
     save_raw_response(conn, b, "comtrade", ec.BASE_URL, q.params(),
                       {"data": [rec(156, 999, "M", 10, 10, period="209801")]})
-    _, quarantine = build_flows(conn)
+    _, quarantine = build_flows(conn, TEST_YEARS)
     assert (quarantine["partner_code"] == 999).any()
 
 
 def test_load_is_idempotent(conn):
-    good, _ = build_flows(conn)
+    good, _ = build_flows(conn, TEST_YEARS)
     g = _rows_2099(good)
     r1, r2 = load(conn, g), load(conn, g)
     assert r1.inserted == 5 and r2.inserted == 0 and r2.updated == 0
@@ -73,13 +76,13 @@ def test_latest_version_wins(conn):
     save_raw_response(conn, b, "comtrade", ec.BASE_URL, direct.params(), {"data": [
         rec(156, 842, "M", 1_000_000, 2_500_000), rec(156, 724, "M", 2_000_000, 4_200_000),
         rec(156, 0, "M", 3_000_000, 6_700_000)], "revision": 2})
-    good, _ = build_flows(conn)
+    good, _ = build_flows(conn, TEST_YEARS)
     usa = good[(good["period"] == date(2099, 1, 1)) & (good["partner_code"] == 842) & (good["source"] == "comtrade")]
     assert len(usa) == 1 and usa["value_usd"].iloc[0] == 2_500_000
 
 
 def test_reconciliation_ratio(conn):
-    good, _ = build_flows(conn)
+    good, _ = build_flows(conn, TEST_YEARS)
     g = _rows_2099(good).copy()
     g["period"] = date(2024, 1, 1)          # la conciliación usa 2018–2024
     r = reconciliation(g, {842: "USA", 724: "ESP"})
