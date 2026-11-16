@@ -8,7 +8,8 @@ y gold nunca se desincroniza de silver):
      en dos bases que no se mezclan: directo (China, CIF) y espejo (exportadores, FOB).
   3. fact_tariff_applied: arancel total por mes × origen × línea HS, calculado a partir
      de las medidas SCD2 vigentes el día 15 de cada mes.
-  4. Conciliación gold = silver y pruebas de negocio.
+  4. fact_market_balance (USDA, miles de t CWE), fact_domestic_production y dim_scenario.
+  5. Conciliación gold = silver y pruebas de negocio.
 
 Uso:  python -m src.build_gold
 """
@@ -171,6 +172,52 @@ def applied_tariffs(measures: pd.DataFrame, members: pd.DataFrame, months: pd.Se
     return out.drop(columns="month")
 
 
+# ---------------------------------------------------------------- balance, producción y escenarios
+PSD_COLS = {"Production": "production_kt", "Imports": "imports_kt", "Exports": "exports_kt",
+            "Domestic Consumption": "consumption_kt", "Ending Stocks": "ending_stocks_kt"}
+
+
+def shape_balance(rows: pd.DataFrame, last_closed_year: int) -> pd.DataFrame:
+    """rows (formato largo de silver): psd_code, name, country_id, market_year, attribute, value, released."""
+    r = rows[rows["attribute"].isin(PSD_COLS)]
+    wide = (r.pivot_table(index=["psd_code", "market_year"], columns="attribute", values="value", aggfunc="last")
+             .rename(columns=PSD_COLS).reset_index())
+    for c in PSD_COLS.values():
+        if c not in wide.columns:
+            wide[c] = np.nan
+    info = r.groupby(["psd_code", "market_year"]).agg(area_name=("name", "first"), country_key=("country_id", "first"),
+                                                      released=("released", "max")).reset_index()
+    out = wide.merge(info, on=["psd_code", "market_year"])
+    cons = out["consumption_kt"].where(out["consumption_kt"] > 0)
+    out["import_share_pct"] = (out["imports_kt"] / cons * 100).round(2)
+    out["self_sufficiency_pct"] = (out["production_kt"] / cons * 100).round(2)
+    out["is_projection"] = out["market_year"] > last_closed_year
+    cols = ["psd_code", "market_year", "area_name", "country_key", *PSD_COLS.values(),
+            "import_share_pct", "self_sufficiency_pct", "is_projection", "released"]
+    return out[cols].astype(object).where(out[cols].notna(), None)
+
+
+def read_balance(conn) -> pd.DataFrame:
+    df = pd.read_sql(text(f"""
+        SELECT b.psd_code, c.name, c.country_id, b.market_year, b.attribute, b.value, b.released
+        FROM {SILVER}.psd_balance b JOIN {SILVER}.psd_country c ON c.psd_code = b.psd_code
+        WHERE b.unit LIKE '%CWE%'"""), conn)
+    df["value"] = pd.to_numeric(df["value"])
+    return df
+
+
+def read_production_and_scenarios(conn) -> tuple[pd.DataFrame, pd.DataFrame]:
+    prod = pd.read_sql(text(f"""
+        SELECT p.country_id AS country_key, p.year, s.name AS source_name, p.production_t,
+               p.is_estimate, p.notes
+        FROM {SILVER}.country_production p JOIN {SILVER}.source s ON s.source_id = p.source_id"""), conn)
+    prod["is_estimate"] = prod["is_estimate"].astype(bool)
+    sc = pd.read_sql(text(f"""SELECT scenario_id AS scenario_key, code, trade_case, china_selfsuff, cert_year,
+                                     description_es AS label_es FROM {SILVER}.scenario"""), conn)
+    sc["cert_year"] = sc["cert_year"].astype(object).where(sc["cert_year"].notna(), None)
+    return prod, sc
+
+
 # ---------------------------------------------------------------- carga
 def main() -> int:
     pd.set_option("display.width", 160)
@@ -194,30 +241,39 @@ def main() -> int:
         tariffs = tariffs.assign(origin_key=tariffs.pop("origin_id"),
                                  product_key=tariffs.pop("hs_code").map(pkeys)).replace({np.nan: None})
 
+        balance = shape_balance(read_balance(conn), last_closed_year=date.today().year - 1)
+        production, scenarios = read_production_and_scenarios(conn)
+
         # Reconstrucción completa: primero se vacían los hechos (dependen de las dimensiones)
-        for t in ("fact_tariff_applied", "fact_china_imports"):
+        for t in ("fact_tariff_applied", "fact_china_imports", "fact_market_balance", "fact_domestic_production"):
             conn.execute(text(f"DELETE FROM {GOLD}.{t}"))
         upsert_df(conn, dim_country, GOLD, "dim_country", ["iso3", "name_es", "supplier_bloc", "exports_pork_to_china"])
         upsert_df(conn, dim_product, GOLD, "dim_product", ["hs_code", "product_group_es", "description_es", "is_sam"])
         r_imp = upsert_df(conn, imports, GOLD, "fact_china_imports", ["tonnes"])
         r_tar = upsert_df(conn, tariffs, GOLD, "fact_tariff_applied", ["mfn_pct"])
+        upsert_df(conn, scenarios, GOLD, "dim_scenario", ["code", "trade_case", "china_selfsuff", "cert_year", "label_es"])
+        r_bal = upsert_df(conn, balance, GOLD, "fact_market_balance", ["production_kt"])
+        r_prod = upsert_df(conn, production, GOLD, "fact_domestic_production", ["production_t"])
 
-        print(f"[1/4] Dimensiones: {len(dim_country)} países · {len(dim_product)} líneas HS "
+        print(f"[1/5] Dimensiones: {len(dim_country)} países · {len(dim_product)} líneas HS "
               f"(SAM: {', '.join(dim_product.loc[dim_product['is_sam'], 'hs_code'])})\n"
               f"      Con acceso real (venden cerdo a China, últimos 24 meses): {int(dim_country['exports_pork_to_china'].sum())} países · "
               f"Ecuador: {'sí' if dim_country.loc[dim_country['iso3'] == 'ECU', 'exports_pork_to_china'].any() else 'no'}")
-        print(f"[2/4] fact_china_imports: {r_imp.inserted:,} filas · fact_tariff_applied: {r_tar.inserted:,} filas "
+        print(f"[2/5] fact_china_imports: {r_imp.inserted:,} filas · fact_tariff_applied: {r_tar.inserted:,} filas "
               f"({len(months)} meses × {len(origins)} orígenes × {len(pkeys)} líneas)".replace(",", "."))
+        print(f"      fact_market_balance: {r_bal.inserted} filas · fact_domestic_production: {r_prod.inserted} · "
+              f"dim_scenario: {len(scenarios)} escenarios")
 
         ok = reconcile(conn)
         show_tariffs(conn)
+        show_balance(conn)
     print("\nTodo listo." if ok else "\nLa conciliación falló: pégale esta salida a Claude.")
     return 0 if ok else 1
 
 
 def reconcile(conn) -> bool:
     """Gold debe sumar lo mismo que silver y reproducir el arancel ya verificado a EE. UU."""
-    print("\n[3/4] Conciliación gold = silver")
+    print("\n[3/5] Conciliación gold = silver")
     silver = read_flows(conn).groupby("basis")["net_weight_kg"].sum().astype(float) / 1000
     gold = pd.read_sql(text(f"SELECT basis, SUM(tonnes) t FROM {GOLD}.fact_china_imports GROUP BY basis"),
                        conn).set_index("basis")["t"].astype(float)
@@ -227,6 +283,18 @@ def reconcile(conn) -> bool:
         ok &= same
         print(f"      {b:<7} silver {silver.get(b, 0):>14,.0f} t · gold {gold.get(b, 0):>14,.0f} t  "
               f"{'OK' if same else 'DIFERENCIA'}".replace(",", "."))
+    for label, sq, gq in [
+        ("USDA producción (kt CWE)",
+         f"SELECT SUM(value) FROM {SILVER}.psd_balance WHERE attribute='Production' AND unit LIKE '%CWE%'",
+         f"SELECT SUM(production_kt) FROM {GOLD}.fact_market_balance"),
+        ("Producción nacional (t)", f"SELECT SUM(production_t) FROM {SILVER}.country_production",
+         f"SELECT SUM(production_t) FROM {GOLD}.fact_domestic_production"),
+        ("Escenarios", f"SELECT COUNT(*) FROM {SILVER}.scenario", f"SELECT COUNT(*) FROM {GOLD}.dim_scenario"),
+    ]:
+        sv, gv = (float(conn.execute(text(q)).scalar() or 0) for q in (sq, gq))
+        same = abs(sv - gv) < 1
+        ok &= same
+        print(f"      {label:<25} silver {sv:>12,.0f} · gold {gv:>12,.0f}  {'OK' if same else 'DIFERENCIA'}".replace(",", "."))
     got = dict(conn.execute(text(f"""
         SELECT t.date_key, t.total_min_pct FROM {GOLD}.fact_tariff_applied t
         JOIN {GOLD}.dim_country c ON c.country_key = t.origin_key AND c.iso3 = 'USA'
@@ -254,8 +322,25 @@ def show_tariffs(conn) -> None:
         WHERE t.date_key = {today} AND p.hs_code = '020649'
           AND c.iso3 IN ('USA','CAN','ESP','DNK','BRA','CHL','ECU')
         ORDER BY t.effective_min_pct DESC"""), conn)
-    print(f"\n[4/4] Arancel de China a las vísceras congeladas (020649) en {today[:4]}-{today[4:6]} (%)")
+    print(f"\n[4/5] Arancel de China a las vísceras congeladas (020649) en {today[:4]}-{today[4:6]} (%)")
     print("      " + df.fillna("—").to_string(index=False).replace("\n", "\n      "))
+
+
+def show_balance(conn) -> None:
+    df = pd.read_sql(text(f"""
+        SELECT market_year AS año, production_kt AS produccion, consumption_kt AS consumo, imports_kt AS importa,
+               import_share_pct AS `import_%`, self_sufficiency_pct AS `autosuf_%`,
+               IF(is_projection, 'proyección', 'cerrado') AS estado
+        FROM {GOLD}.fact_market_balance WHERE psd_code = 'CH' ORDER BY market_year"""), conn)
+    print("\n[5/5] Balance de cerdo de China (USDA, miles de t CWE)")
+    print("      " + df.to_string(index=False).replace("\n", "\n      "))
+    ec = pd.read_sql(text(f"""
+        SELECT p.year AS año, p.source_name AS fuente, p.production_t AS toneladas,
+               IF(p.is_estimate, 'estimado', 'dato') AS tipo
+        FROM {GOLD}.fact_domestic_production p JOIN {GOLD}.dim_country c ON c.country_key = p.country_key
+        WHERE c.iso3 = 'ECU' ORDER BY p.year, p.source_name"""), conn)
+    print("\n      Producción de Ecuador (t)")
+    print("      " + ec.to_string(index=False).replace("\n", "\n      "))
 
 
 if __name__ == "__main__":

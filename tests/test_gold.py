@@ -98,3 +98,17 @@ def test_built_gold_reconciles_with_silver():
         if not conn.execute(text(f"SELECT COUNT(*) FROM {GOLD}.fact_tariff_applied")).scalar():
             pytest.skip("gold vacío: corre primero .\\gold.ps1")
         assert bg.reconcile(conn)
+
+
+def test_balance_is_pivoted_with_ratios_and_projection_flag():
+    rows = pd.DataFrame([
+        dict(psd_code="CH", name="China", country_id=7, market_year=y, attribute=a, value=v, released="2026-10")
+        for y in (2025, 2026)
+        for a, v in [("Production", 980), ("Imports", 20), ("Domestic Consumption", 1000), ("Total Supply", 1000)]
+    ] + [dict(psd_code="E4", name="European Union", country_id=None, market_year=2025,
+              attribute="Production", value=500, released="2026-10")])
+    out = bg.shape_balance(rows, last_closed_year=2025).set_index(["psd_code", "market_year"])
+    assert out.loc[("CH", 2025), "import_share_pct"] == 2 and out.loc[("CH", 2025), "self_sufficiency_pct"] == 98
+    assert not out.loc[("CH", 2025), "is_projection"] and out.loc[("CH", 2026), "is_projection"]
+    assert out.loc[("E4", 2025), "consumption_kt"] is None          # atributo ausente → NULL, no cero
+    assert "Total Supply" not in out.columns                         # solo los atributos del modelo
