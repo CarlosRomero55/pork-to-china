@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** 10.2 fusionado a main (verificado en el PC) → siguiente 10.3 (flujo de caja, VAN/TIR). Faltan 7 fases (10–16)
+- **Paso:** 10.3 listo en la rama `feat/fase-10-van-tir` → Carlos corre `.\pipeline.ps1`; si sale OK se fusiona y se cierra la Fase 10. Faltan 7 fases (10–16)
 - **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
@@ -26,6 +26,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-16 · 10.3 · (rama feat/fase-10-van-tir) Migración 013: 14 supuestos financieros con fuente o marca de supuesto (inversión 367–555–870 mil USD, costos variables, fijos, impuesto 36,25%, capital de trabajo, empleos), producción de Ecuador v3 (ASPE 2025 = 230 mil t), columnas nuevas en fact_scenario_result. src/finance.py: flujo de caja 0–10 por escenario (fact_scenario_cashflow 264 filas), VAN, TIR, payback simple y descontado, divisas, empleos, toneladas de equilibrio y VALOR LOCAL MÁXIMO DE LA VÍSCERA (VAN = 0). ADR-010. Resultados: margen 0,45 USD/kg (FOB 1,60 − costo 1,15); VAN positivo en los 18 escenarios con certificación (de +0,48 M en A-up-6 a +4,69 M en C-down-2) y −0,555 M en los 6 sin certificación; TIR 21–70%; equilibrio con solo 707–1.483 t/año; víscera máxima 1,08–1,25 USD/kg vs base 0,90 (sin fuente). Cada 2 años de demora en la certificación cuestan ~1,1–1,8 M de VAN. 137/137 pytest
 - 2026-11-16 · 10.2-v · pipeline.ps1 en el PC: 9/9 OK en 71 s (migración 012). Fusionado a main
 - 2026-11-16 · 10.2 · (rama feat/fase-10-tam-sam-som) Migración 012: supuestos de tendencia del mercado, techo de participación, factor de represalias, capacidad 5.000 t, rampa 40-70-100 y año 0 = 2026; asignación mín/base/máx a los 24 escenarios en scenario_assumption (168 filas); tabla gold.fact_scenario_market. src/scenarios.py llena fact_scenario_market (240 filas) y fact_landed_cost (336). Base 2025: TAM 1,90 Mt, SAM 1,85 Mt; 2027 = 69,1% de 2025 (USDA). Hallazgos: en A y B el MERCADO limita el volumen (techo 2036: A 1.946–3.341 t, B 2.920–5.011 t) y solo en C se venden las 5.000 t; 10 años con certificación en el año 2: A-up 19.365 t · B-up 27.935 · C-down 40.500. Si China levanta las represalias (A), Canadá (1,85 USD/kg) queda por debajo de Ecuador (1,93) en destino. Bug evitado: `NaN or 0` es NaN en Python → función num(). 127/127 pytest
 - 2026-11-16 · 10.1-v · pipeline.ps1 en el PC: 8/8 OK (migración 011). Tardó 106 s vs 47 s de la corrida previa: todas las etapas 1,5–3× más lentas, incluso las que no cambiaron (USDA 4,0 → 12,8 s) → carga del equipo (antivirus revisando archivos nuevos / otros procesos), no el código. Fusionado a main
@@ -90,6 +91,7 @@
 | 2026-11-13 | Corte vertical: Comtrade a silver antes de extraer otras fuentes | — |
 | 2026-11-13 | Cambios de esquema con migraciones versionadas (sql/migrations + schema_migration) | — |
 | 2026-11-13 | Canadá es proveedor sancionado (25% desde 20-mar-2025) → nuevo corte de análisis | — |
+| 2026-11-16 | Modelo financiero: USD reales, adecuación de planta existente, víscera a costo de oportunidad, el dato sin fuente se reporta como punto de equilibrio | ADR-010 |
 | 2026-11-16 | Los análisis de serie de tiempo sobre la base espejo usan solo meses completos (gold.mirror_coverage) | migración 010 |
 | 2026-11-15 | Series de tiempo y comparaciones antes/después usan UNA sola base (espejo); el directo solo para cortes transversales de 2018–2024 (p. ej. Pareto con todos los orígenes) | migración 009 |
 | 2026-11-15 | Gold se reconstruye completo; arancel aplicado precalculado (tasa del día 15, bloques por fecha de pertenencia, antidumping como rango, acuerdo reemplaza al NMF); acceso = ventas observadas en 24 meses (ADR-009) | ADR-009 |
@@ -121,4 +123,4 @@
 - [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Paso 10.3:** flujo de caja, VAN/TIR, payback y punto de equilibrio de AgroPorc por escenario (inversión y costos con fuentes públicas, tasa 12%), llenando fact_scenario_cashflow y fact_scenario_result.
+**Cierre Fase 10:** preguntas de entrevista. Luego **Fase 11:** API con FastAPI (endpoints de escenarios, arancel efectivo, costo puesto en China y resultados, con pork_bi).

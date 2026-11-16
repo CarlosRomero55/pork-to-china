@@ -43,7 +43,10 @@ def model():
 
 def test_latest_assumption_version_is_used(model):
     a, _, _ = model
-    assert a.loc["ecuador_pork_production", "version"] == 2
+    with get_engine("etl").connect() as conn:
+        latest = conn.execute(text("SELECT MAX(version) FROM pork_silver.assumption "
+                                   "WHERE name = 'ecuador_pork_production'")).scalar()
+    assert latest >= 2 and a.loc["ecuador_pork_production", "version"] == latest
 
 
 def test_ecuador_is_price_taker_per_line(model):
