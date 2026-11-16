@@ -147,7 +147,9 @@ CSV = ("Commodity_Code,Commodity_Description,Country_Code,Country_Name,Market_Ye
 def make_zip(csv=CSV):
     buf = _io.BytesIO()
     with _zip.ZipFile(buf, "w") as z:
-        z.writestr("psd_livestock.csv", csv)
+        # Fecha fija: con la hora actual, dos ZIP "iguales" difieren si cruzan un segundo par
+        # (la prueba fallaba en equipos más lentos)
+        z.writestr(_zip.ZipInfo("psd_livestock.csv", date_time=(2026, 1, 1, 0, 0, 0)), csv)
     return buf.getvalue()
 
 
