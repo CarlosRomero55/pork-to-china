@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** Fase 7 (gold) cerrada y verificada en el PC → siguiente Fase 8 (orquestación). Faltan 9 fases (8–16)
+- **Paso:** 8.1 listo en la rama `feat/fase-08-orquestacion` → Carlos corre `.\pipeline.ps1`; si sale OK se fusiona a main. Faltan 9 fases (8–16)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
@@ -25,6 +25,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 8.1 · (rama feat/fase-08-orquestacion) Migración 008 (etl_run + etl_run_stage en bronze); src/pipeline.py: etapas como subprocesos aislados, se detiene en la primera falla y marca las demás 'skipped', candado GET_LOCK contra corridas simultáneas, corridas muertas → 'aborted', salida completa en logs/runs/. pipeline.ps1 (-Extract, -From). Prueba real: detectó un ZIP faltante y se detuvo; con el ZIP, 2 corridas OK (~40 s) y la 2.ª con 0 cambios (idempotente). 89/89 pytest
 - 2026-11-15 · 7.2-v · gold.ps1 en el PC: conciliación 9/9 OK, 84/84 pytest. FASE 7 CERRADA. Se adopta flujo de ramas (docs/git-workflow.md) y etiqueta v0.7.0
 - 2026-11-15 · 7.2 · Migración 007: fact_market_balance (USDA, kt CWE, ancho, con % importado y autosuficiencia, marca de proyección) y fact_domestic_production (ASPE/MAG); dim_scenario (24). Conciliación 9/9 OK. Hallazgo: China pasó de 87,5% de autosuficiencia (2020, PPA) a 98,2% (2025) y 99,0% proyectado en 2027; importaciones 5.277 → 820 kt. 84/84 pytest
 - 2026-11-15 · 7.1-v · gold.ps1 en el PC: idéntico a la nube (10.488 + 101.520 filas, conciliación 6/6 OK), 83/83 pytest
@@ -107,4 +108,4 @@
 - [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Fase 8 (orquestación):** pipeline.py único (extract → silver → validate → gold) idempotente, tabla etl_runs y un solo comando pipeline.ps1. Luego Fase 9 (12+ consultas SQL de negocio) y Fase 10 (modelo analítico: desvío de comercio, landed cost, escenarios, VAN/TIR).
+**Paso 8.2:** cerrar la Fase 8 (fusión a main + preguntas de entrevista). Luego Fase 9: 12+ consultas SQL de negocio (CTE, funciones de ventana) sobre gold.
