@@ -34,6 +34,7 @@ httpx2==2.16.2
 # --- Visualización y notebooks ---
 matplotlib==3.11.2
 plotly==7.1.0
+streamlit==1.67.0
 ipykernel==7.4.0
 
 # Capa 2 (mapa sanitario) se agregará luego en requirements-geo.txt: geopandas, folium

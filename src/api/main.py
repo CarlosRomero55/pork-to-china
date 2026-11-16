@@ -20,9 +20,8 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
-from src import finance as fi
+from src import simulation as sim
 from src.db import get_engine
-from src.scenarios import ramp_share, volume
 
 GOLD = "pork_gold"
 app = FastAPI(
@@ -170,26 +169,15 @@ class SimulationOutput(BaseModel):
 @app.post("/simulate", tags=["simulador"], response_model=SimulationOutput,
           summary="Recalcula VAN y TIR de un escenario cambiando supuestos (no guarda nada)")
 def simulate(inp: SimulationInput):
-    key = scenario_key(inp.scenario)
-    p = {r["name"]: r["value"] for r in rows(f"SELECT name, value FROM {GOLD}.v_scenario_params "
-                                               f"WHERE scenario_key = :k", k=key)}
-    cert = rows(f"SELECT cert_year FROM {GOLD}.dim_scenario WHERE scenario_key = :k", k=key)[0]["cert_year"]
-    caps = [r["som_cap_t"] for r in rows(f"SELECT som_cap_t FROM {GOLD}.fact_scenario_market "
-                                          f"WHERE scenario_key = :k ORDER BY year_n", k=key)]
-    base_npv = rows(f"SELECT npv_usd FROM {GOLD}.fact_scenario_result WHERE scenario_key = :k", k=key)[0]["npv_usd"]
-
-    overrides = {"discount_rate": inp.discount_rate, "offal_local_value_usd_kg": inp.offal_local_value_usd_kg,
-                 "ecuador_fob_usd_kg_offal": inp.fob_usd_kg, "agroporc_capacity_t": inp.capacity_t}
-    p |= {k: v for k, v in overrides.items() if v is not None}
-    for k in fi.CAPEX_ITEMS:
-        p[k] = p[k] * inp.capex_factor
-    # Mismo volumen que el pipeline: mín(capacidad × rampa, techo de mercado del escenario)
-    tonnes = [volume(p["agroporc_capacity_t"] * ramp_share(n, cert, p["entry_ramp_y1_pct"], p["entry_ramp_y2_pct"]),
-                     cap)[0] for n, cap in enumerate(caps, start=1)]
-    res, _ = fi.evaluate(tonnes, p, cert)
-    shown = ("discount_rate", "offal_local_value_usd_kg", "ecuador_fob_usd_kg_offal", "agroporc_capacity_t")
-    return SimulationOutput(
-        scenario=inp.scenario, npv_usd=res["npv_usd"], irr_pct=res["irr_pct"], payback_years=res["payback_years"],
-        breakeven_offal_usd_kg=res["breakeven_offal_usd_kg"], total_tonnes=round(sum(tonnes), 1),
-        base_npv_usd=base_npv, delta_npv_usd=round(res["npv_usd"] - base_npv, 2),
-        assumptions_used={k: p[k] for k in shown} | {"capex_usd": sum(p[k] for k in fi.CAPEX_ITEMS)})
+    # Misma función que usa el tablero de Streamlit (src/simulation.py): el cálculo vive en un solo lugar
+    try:
+        base = sim.load(inp.scenario)
+    except sim.UnknownScenario:
+        raise HTTPException(404, f"Escenario desconocido: {inp.scenario}. Ver GET /scenarios")
+    r = sim.run(base, capex_factor=inp.capex_factor, discount_rate=inp.discount_rate,
+                offal_local_value_usd_kg=inp.offal_local_value_usd_kg, fob_usd_kg=inp.fob_usd_kg,
+                capacity_t=inp.capacity_t)
+    return SimulationOutput(scenario=r.scenario, npv_usd=r.npv_usd, irr_pct=r.irr_pct, payback_years=r.payback_years,
+                            breakeven_offal_usd_kg=r.breakeven_offal_usd_kg, total_tonnes=r.total_tonnes,
+                            base_npv_usd=r.base_npv_usd, delta_npv_usd=r.delta_npv_usd,
+                            assumptions_used=r.assumptions_used)
