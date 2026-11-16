@@ -92,3 +92,26 @@ def test_failed_batch_is_recorded():
                                      "WHERE batch_id=:b"), {"b": batch_id}).one()
         c.execute(text(f"DELETE FROM {BRONZE}.extract_batch WHERE source_name LIKE 'pytest%'"))
     assert status == "failed" and "API caída" in msg
+
+
+def test_insert_df_fast_path_and_pk_guard():
+    """insert_df inserta por lotes y, si hay una fila repetida, la PK hace fallar la carga."""
+    import pandas as pd
+    from sqlalchemy.exc import IntegrityError
+    from src.db import GOLD, insert_df
+    with get_engine("etl").connect() as c:
+        keys = [r[0] for r in c.execute(text(f"SELECT country_key FROM {GOLD}.dim_country LIMIT 3"))]
+        if len(keys) < 3:
+            pytest.skip("gold vacío: corre primero .\\gold.ps1")
+        rows = pd.DataFrame([dict(country_key=k, year=2099, source_name="pytest", production_t=1.0,
+                                  is_estimate=True, notes=None) for k in keys])
+        c.rollback()                      # cierra la transacción implícita del SELECT
+        trans = c.begin()
+        try:
+            assert insert_df(c, rows, GOLD, "fact_domestic_production", chunk_size=2) == 3
+            n = c.execute(text(f"SELECT COUNT(*) FROM {GOLD}.fact_domestic_production WHERE year=2099")).scalar()
+            assert n == 3
+            with pytest.raises(IntegrityError):
+                insert_df(c, rows.head(1), GOLD, "fact_domestic_production")
+        finally:
+            trans.rollback()
