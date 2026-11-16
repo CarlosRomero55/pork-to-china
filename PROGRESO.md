@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 13 – Métodos mixtos (decisiones: fuentes públicas + guion de entrevista; mapa sanitario por provincia; benchmark Chile, Costa Rica, Brasil)
-- **Paso:** 13.1 listo en la rama `feat/fase-13-viscera` → Carlos corre `.\pipeline.ps1`; si sale OK se fusiona. Siguen 13.2 (mapa sanitario) y 13.3 (benchmark). Faltan 4 fases (13–16)
+- **Paso:** 13.1 cerrado y fusionado. Siguen 13.2 (mapa sanitario) y 13.3 (benchmark). Faltan 4 fases (13–16)
 - **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
@@ -26,6 +26,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-16 · 13.1-v · En el PC: pipeline corrida 46: 10/10 OK, 161 passed en 18,5 s; finanzas: margen −0,03 USD/kg, 0 de 24 con VAN positivo (logs leídos por Claude). Fusionado a main
 - 2026-11-16 · 13.1 · (rama feat/fase-13-viscera) Valor local de la víscera v2 con referencias públicas (migración 015): 1,14–1,38–2,20 USD/kg = precios de productor de cuero (1,00 USD/lb) y patitas (1,20 USD/lb) × factor planta/mercado 0,52 (SIPA, pollo; supuesto); patas en supermercado 3,32–4,99 USD/kg como contraste. Decisión de Carlos: usar la base 1,38 y contarlo. RESULTADO: 0 de 24 escenarios con VAN positivo (antes 18); margen −0,03 USD/kg (FOB 1,60 − costo 1,63); VAN −0,99 a −2,19 M en los certificados. Con el mínimo 1,14 serían 16 de 18 positivos: la conclusión depende de este dato. La víscera exportable que más compra China (patas) tiene buen precio en Ecuador. Tablero: narrativa de la página 3 según el resultado, deslizador de víscera hasta 3,0, TIR sin cortar. Pruebas: test de certificación ahora sobre la víscera máxima (no depende del valor base), test de signo VAN ↔ víscera máx. vs base, test de la v2. Arreglo en finance.py (impresión con t_equilibrio vacío). docs/interview_guide.md (12 preguntas, bloques víscera / protocolo / cierre) y data/qualitative/interview_template.csv. 161/161 pytest
 - 2026-11-16 · 12.1-v · En el PC: setup.ps1 instaló Streamlit; pipeline corrida 41: 10/10 OK, 160 passed en 26,8 s (registro logs/runs leído por Claude); dashboard.ps1 abrió el tablero sin errores. Fusionado a main. FASE 12 CERRADA
 - 2026-11-16 · 12.1 · (rama feat/fase-12-tablero) Tablero Streamlit de 4 páginas en src/dashboard/ (la ventana de China, precio en destino, 24 escenarios, simulador What-If), lectura con pork_bi y caché de 10 min. Dependencia aprobada por Carlos: streamlit 1.67.0 (verificada para Windows/Py 3.14 con pyarrow 26.0.1, sin cambiar pines). Simulador movido a src/simulation.py y compartido por la API y el tablero (sin cambios reproduce el VAN del pipeline). Paleta validada con el skill dataviz (azul/naranja/aqua; rojo↔azul con medio gris para signos). Revisión visual con capturas reales (Chrome por CDP, esperando el websocket de Streamlit): se corrigieron barra de herramientas sobre títulos, miles sin separador, leyendas sobre títulos, métricas cortadas, contraste del texto en el mapa de calor, orden de la leyenda y color semántico de la caída de importaciones. Capturas en docs/img/; docs/dashboard.md; dashboard.ps1. 160/160 pytest
@@ -115,6 +116,7 @@
 - ASPE: el maíz encarece los costos de producción entre 30% y 40% frente a otros mercados → riesgo para el landed cost.
 
 ## Pendientes
+- [ ] Fase 16 (idea de Carlos, 2026-11-16): video animado explicativo para LinkedIn (cadena causa → efecto con los datos reales), además del post
 - [ ] Confirmar en la lista oficial de la OMSA que Ecuador no tiene ninguna zona libre de PPC
 - [ ] Obtener el calendario oficial de desgravación (anexo del acuerdo, MPCEIP) para 0203/0206/0210 → hoy supuesto lineal 15 años
 - [ ] Confirmar si existe un protocolo sanitario de cerdo Ecuador–China (no se encontró ninguno firmado)
