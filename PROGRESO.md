@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** 8.1b listo en la rama `fix/fase-08-gold-rendimiento` (sale de feat/fase-08-orquestacion) → Carlos corre `.\pipeline.ps1`; si sale OK se fusionan ambas a main. Faltan 9 fases (8–16)
+- **Paso:** FASE 8 CERRADA (pipeline único, verificado en el PC) → siguiente Fase 9 (consultas SQL de negocio). Faltan 8 fases (9–16)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
@@ -25,6 +25,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 8.1b-v · pipeline.ps1 en el PC: 6/6 OK en 62 s; gold 749 → 20,4 s (37x). Se fusionan feat/fase-08-orquestacion y fix/fase-08-gold-rendimiento a main. FASE 8 CERRADA
 - 2026-11-15 · 8.1b · (rama fix/fase-08-gold-rendimiento) pipeline.ps1 en el PC: 6/6 OK pero gold tardó 749 s (nube 35 s). Causa: upsert_df hacía COUNT(*) antes y después de CADA lote de 1.000 filas → costo cuadrático (~100 lotes sobre una tabla que crece). Arreglo: contar una vez al inicio y al final; nueva insert_df (INSERT por lotes de 5.000 vía executemany) para hechos que se reconstruyen. Nube: gold 35 → 6,5 s, pipeline 45 → 16 s. 90/90 pytest
 - 2026-11-15 · 8.1 · (rama feat/fase-08-orquestacion) Migración 008 (etl_run + etl_run_stage en bronze); src/pipeline.py: etapas como subprocesos aislados, se detiene en la primera falla y marca las demás 'skipped', candado GET_LOCK contra corridas simultáneas, corridas muertas → 'aborted', salida completa en logs/runs/. pipeline.ps1 (-Extract, -From). Prueba real: detectó un ZIP faltante y se detuvo; con el ZIP, 2 corridas OK (~40 s) y la 2.ª con 0 cambios (idempotente). 89/89 pytest
 - 2026-11-15 · 7.2-v · gold.ps1 en el PC: conciliación 9/9 OK, 84/84 pytest. FASE 7 CERRADA. Se adopta flujo de ramas (docs/git-workflow.md) y etiqueta v0.7.0
@@ -109,4 +110,4 @@
 - [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Paso 8.2:** cerrar la Fase 8 (fusión a main + preguntas de entrevista). Luego Fase 9: 12+ consultas SQL de negocio (CTE, funciones de ventana) sobre gold.
+**Fase 9:** 12+ consultas SQL de negocio sobre gold (CTE y funciones de ventana): desvío de comercio, rankings, YoY, participación, arancel efectivo, autosuficiencia. Cada consulta en sql/queries/ con su pregunta de negocio, prueba y resultado.
