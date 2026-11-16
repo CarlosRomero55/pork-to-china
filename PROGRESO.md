@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** FASE 8 CERRADA (pipeline único, verificado en el PC) → siguiente Fase 9 (consultas SQL de negocio). Faltan 8 fases (9–16)
+- **Paso:** 9.1 fusionado a main (verificado en el PC) → siguiente 9.2 (6+ consultas más y vistas del tablero). Faltan 8 fases (9–16)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
@@ -25,6 +25,8 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-16 · 9.1-v · pipeline.ps1 en el PC: 7/7 OK en 69 s (migración 009, etapa queries). Fusionado a main
+- 2026-11-15 · 9.1 · (rama feat/fase-09-consultas-sql) 6 consultas en sql/queries/ (q01 desvío de comercio, q02 ranking RANK, q03 YoY LAG, q04 Pareto SUM OVER + HHI, q05 brecha arancelaria MIN OVER, q06 autosuficiencia con media móvil y FIRST/MAX OVER), cada una con Pregunta/Técnica/Fuente/Lectura. run_queries.py las corre con pork_bi (solo lectura) y genera docs/queries.md; nueva etapa 'queries' en el pipeline. ERROR METODOLÓGICO DETECTADO Y CORREGIDO: comparar periodos que cruzan el corte directo/espejo (2024-12) daba EE. UU. +20% en carne cuando cayó −33% → las comparaciones usan solo espejo y v_supplier_tonnes pasa a ser solo espejo (migración 009). Hallazgos: carne → pierden Brasil −4,6 pp, Canadá −4,1, EE. UU. −1,3; gana España +4,0. Vísceras → EE. UU. −31% (−5,9 pp), ganan España, R. Unido y Dinamarca. 5 proveedores = 77,9% de las vísceras (HHI 1.531). Importaciones 2027p = 15,5% del pico de 2020. 97/97 pytest
 - 2026-11-15 · 8.1b-v · pipeline.ps1 en el PC: 6/6 OK en 62 s; gold 749 → 20,4 s (37x). Se fusionan feat/fase-08-orquestacion y fix/fase-08-gold-rendimiento a main. FASE 8 CERRADA
 - 2026-11-15 · 8.1b · (rama fix/fase-08-gold-rendimiento) pipeline.ps1 en el PC: 6/6 OK pero gold tardó 749 s (nube 35 s). Causa: upsert_df hacía COUNT(*) antes y después de CADA lote de 1.000 filas → costo cuadrático (~100 lotes sobre una tabla que crece). Arreglo: contar una vez al inicio y al final; nueva insert_df (INSERT por lotes de 5.000 vía executemany) para hechos que se reconstruyen. Nube: gold 35 → 6,5 s, pipeline 45 → 16 s. 90/90 pytest
 - 2026-11-15 · 8.1 · (rama feat/fase-08-orquestacion) Migración 008 (etl_run + etl_run_stage en bronze); src/pipeline.py: etapas como subprocesos aislados, se detiene en la primera falla y marca las demás 'skipped', candado GET_LOCK contra corridas simultáneas, corridas muertas → 'aborted', salida completa en logs/runs/. pipeline.ps1 (-Extract, -From). Prueba real: detectó un ZIP faltante y se detuvo; con el ZIP, 2 corridas OK (~40 s) y la 2.ª con 0 cambios (idempotente). 89/89 pytest
@@ -81,6 +83,7 @@
 | 2026-11-13 | Corte vertical: Comtrade a silver antes de extraer otras fuentes | — |
 | 2026-11-13 | Cambios de esquema con migraciones versionadas (sql/migrations + schema_migration) | — |
 | 2026-11-13 | Canadá es proveedor sancionado (25% desde 20-mar-2025) → nuevo corte de análisis | — |
+| 2026-11-15 | Series de tiempo y comparaciones antes/después usan UNA sola base (espejo); el directo solo para cortes transversales de 2018–2024 (p. ej. Pareto con todos los orígenes) | migración 009 |
 | 2026-11-15 | Gold se reconstruye completo; arancel aplicado precalculado (tasa del día 15, bloques por fecha de pertenencia, antidumping como rango, acuerdo reemplaza al NMF); acceso = ventas observadas en 24 meses (ADR-009) | ADR-009 |
 | 2026-11-15 | Arancel preferencial de Ecuador REEMPLAZA al NMF (no se suma) y solo aplica en escenarios con protocolo sanitario; corrección de datos mal sembrados se hace en sitio, cambios reales en el tiempo con SCD2 | — |
 | 2026-11-15 | USDA en silver en formato largo (país × año × atributo); no se suma con Comtrade (CWE sin vísceras vs. peso neto con vísceras) | — |
@@ -110,4 +113,4 @@
 - [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Fase 9:** 12+ consultas SQL de negocio sobre gold (CTE y funciones de ventana): desvío de comercio, rankings, YoY, participación, arancel efectivo, autosuficiencia. Cada consulta en sql/queries/ con su pregunta de negocio, prueba y resultado.
+**Paso 9.2:** 6+ consultas más (estacionalidad, valor unitario por proveedor vs Chile, quinto cuarto vísceras/carne, arancel ponderado por volumen, meses de cambio de liderazgo, mercado direccionable SAM) y vistas para el tablero (v_dash_*), leídas por pork_bi.
