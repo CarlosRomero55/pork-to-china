@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** 4.3b cerrado y verificado en el PC → siguiente 4.3c (aranceles NMF por línea HS + producción de Ecuador)
+- **Paso:** 4.3c listo (NMF por línea, acuerdo Ecuador–China, producción de Ecuador) → Carlos corre `.\validate.ps1`
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 4.3c · Migración 004: NMF verificado por línea (congelado 12, fresco 20, 0210 25; corrige el 12% sembrado en 4 líneas frescas y agrega 0210); SCD2 real del 8% provisional 2020–2021 en 020322/020329; medida preferential Ecuador (supuesto lineal 15 años, 0% en 2038); tabla country_production (ASPE 2023 213 mil t, 2024e 223,7; MAG 2023 216.389). 75/75 pytest, R10 OK
 - 2026-11-15 · 4.3b-v · validate.ps1 OK en el PC: migración 003, 2.844 filas USDA, 10 OK · 2 alertas (R08, R12) · 0 errores, 66/66 pytest
 - 2026-11-15 · 4.3b · Migración 003 (psd_country + psd_balance en formato largo), harmonize_psd.py (ZIP de bronze → silver, 2018+, mapa explícito de códigos FAS → ISO3/EU, desconocidos se conservan). Datos reales: 2.844 filas, 32 países (18 vinculados), idempotente. Bug evitado: el código 'NA' (Antillas Neerlandesas) se leía como dato faltante → keep_default_na=False. Hallazgos: USDA siguió a Ecuador solo hasta 2015 (211 mil t) → producción de Ecuador vendrá de FAOSTAT/ASPE; Brasil exportaría 1.531 (2024) → 1.850 mil t (2027p) aunque China compre menos. Regla R12 (oferta = demanda): 316 balances, 1 alerta en la fuente (Bielorrusia 2023). 66/66 pytest
 - 2026-11-15 · 4.3a-e · Corrida real OK con 'Accept: */*': psd_livestock_csv.zip (0,8 MB), 26.881 registros de cerdo (código 0113000), 98 países, 1960–2027. Columnas: commoditycode, countrycode (códigos FAS: CH, BR...), marketyear, attributeid/description, unitid/description, value. China: producción 2025 = 59.380 mil t CWE (coincide con NBS 59,38 Mt); importaciones 1.186 (2025) → 840 (2026e) → 820 (2027p) = 1,4% del consumo. Ojo: 'Imports' de PSD es carne CWE sin vísceras → no se suma con Comtrade
@@ -70,6 +71,7 @@
 | 2026-11-13 | Corte vertical: Comtrade a silver antes de extraer otras fuentes | — |
 | 2026-11-13 | Cambios de esquema con migraciones versionadas (sql/migrations + schema_migration) | — |
 | 2026-11-13 | Canadá es proveedor sancionado (25% desde 20-mar-2025) → nuevo corte de análisis | — |
+| 2026-11-15 | Arancel preferencial de Ecuador REEMPLAZA al NMF (no se suma) y solo aplica en escenarios con protocolo sanitario; corrección de datos mal sembrados se hace en sitio, cambios reales en el tiempo con SCD2 | — |
 | 2026-11-15 | USDA en silver en formato largo (país × año × atributo); no se suma con Comtrade (CWE sin vísceras vs. peso neto con vísceras) | — |
 | 2026-11-15 | Filas dudosas se marcan (quality_flag), no se borran; gold las excluye del precio promedio pero no del volumen | — |
 | 2026-11-15 | Atípico = estadístico (IQR) O fuera de rango de negocio | — |
@@ -84,10 +86,10 @@
 
 ## Pendientes
 - [ ] Confirmar en la lista oficial de la OMSA que Ecuador no tiene ninguna zona libre de PPC
-- [ ] Obtener la canasta de desgravación de las partidas HS 0203, 0206 y 0210 en el acuerdo Ecuador–China (texto oficial del MPCEIP)
+- [ ] Obtener el calendario oficial de desgravación (anexo del acuerdo, MPCEIP) para 0203/0206/0210 → hoy supuesto lineal 15 años
 - [ ] Confirmar si existe un protocolo sanitario de cerdo Ecuador–China (no se encontró ninguno firmado)
 - [x] Discrepancia del arancel a EE. UU. resuelta: 57% fue may–nov 2025; vigente 47%
-- [ ] Verificar NMF de China por línea HS en WTO TDF (sembrado 12% para 0203/0206)
+- [x] NMF de China por línea HS verificado (migración 004)
 - [ ] Tasas antidumping por empresa (lista MOFCOM) → hoy solo mín/máx de muestreadas
 - [ ] Respuestas pendientes de Carlos (entrevistas, Power BI, RAM, idioma del README)
 - [ ] Preguntas de entrevista de cierre de la Fase 0 (opcionales)
@@ -96,4 +98,4 @@
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
 
 ## Siguiente paso
-**Paso 4.3c:** aranceles NMF de China por línea HS (verificados) + producción de Ecuador (FAOSTAT/ASPE). Después Fase 7 (gold). Luego: 4.3b silver de PSD (migración 003 + regla de balance oferta = demanda), FAOSTAT y aranceles NMF por línea HS; después Fase 7 (gold).
+**Fase 7:** modelo gold (estrella Kimball): dim_date, dim_country, dim_product, fact_trade, fact_tariff (arancel aplicado = NMF o preferencial + adicionales por origen y fecha), fact_balance (USDA). Antes: Carlos corre `.alidate.ps1` (migración 004).
