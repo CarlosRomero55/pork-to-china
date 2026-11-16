@@ -3,7 +3,8 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** 7.2 listo (balance USDA, producción de Ecuador y escenarios en gold) → Carlos corre `.\gold.ps1`. Fase 7 de 16 (faltan 9 fases después de esta)
+- **Paso:** Fase 7 (gold) cerrada y verificada en el PC → siguiente Fase 8 (orquestación). Faltan 9 fases (8–16)
+- **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +25,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 7.2-v · gold.ps1 en el PC: conciliación 9/9 OK, 84/84 pytest. FASE 7 CERRADA. Se adopta flujo de ramas (docs/git-workflow.md) y etiqueta v0.7.0
 - 2026-11-15 · 7.2 · Migración 007: fact_market_balance (USDA, kt CWE, ancho, con % importado y autosuficiencia, marca de proyección) y fact_domestic_production (ASPE/MAG); dim_scenario (24). Conciliación 9/9 OK. Hallazgo: China pasó de 87,5% de autosuficiencia (2020, PPA) a 98,2% (2025) y 99,0% proyectado en 2027; importaciones 5.277 → 820 kt. 84/84 pytest
 - 2026-11-15 · 7.1-v · gold.ps1 en el PC: idéntico a la nube (10.488 + 101.520 filas, conciliación 6/6 OK), 83/83 pytest
 - 2026-11-15 · 7.1 · Migraciones 005 (gold v1: basis directo/espejo, fact_tariff_applied, vista v_supplier_tonnes) y 006 (TLC Chile y Costa Rica 0%; arancel efectivo; acceso observado). build_gold.py: reconstrucción completa ~20 s; 10.488 filas de importaciones y 101.520 de arancel; gold = silver exacto (directo 23,1 Mt, espejo 25,6 Mt) y reproduce 37/172/57/47% a EE. UU. Hallazgo: vísceras congeladas 2026-11 → Chile 0% con acceso, Ecuador 9,6% (supuesto) SIN acceso; UE 16,9–31,8%; EE. UU. 47%. ADR-009. 83/83 pytest
