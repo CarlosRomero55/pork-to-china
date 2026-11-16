@@ -44,7 +44,11 @@
 | 36 | Techo de participación de un recién llegado | 0,2% (A) · 0,3% (B) · 0,5% (C) del SAM | ⚠️ supuesto | Referencia: Chile, con 20 años en China, tiene 3,4% de las vísceras (q04) |
 | 37 | Represalias por caso comercial | Factor sobre los aranceles adicionales: A 0 (se levantan) · B 1 · C 1,5 | ⚠️ supuesto | Escenarios |
 | 38 | Entrada de AgroPorc | 5.000 t/año (rango 3.000–8.000); rampa 40-70-100 desde el año de certificación | ✅ decisión de Carlos (2026-11-16) | — |
-| 30 | Producción de cerdo de Ecuador | 2023: 213 mil t (ASPE) / 216.389 t (MAG); 2024 ≈ 223,7 mil t (ASPE +5%, estimado). En silver.assumption pasó a la versión 2 (213–223,65–240 mil t); la v1 (230–240) se conserva | 🆕 | 333 Latinoamérica con datos de ASPE; MAG vía 3tres3 (sep-2024) |
+| 39 | Inversión de AgroPorc (adecuar planta existente) | Túnel −35 °C 52–70–120 mil · cámara −18 °C 115–135–150 mil · adecuación sanitaria 150–250–400 mil · habilitación China 50–100–200 mil → total 367–555–870 mil USD | ⚠️ parcial | Haocool 2026 (túnel y cámara); el resto, supuesto |
+| 40 | Costos variables de exportar | Proceso 0,10–0,15–0,20 · congelación 0,03–0,05–0,08 · logística 0,03–0,05–0,07 USD/kg; fijos 60–100–150 mil USD/año | ⚠️ supuesto | Baoxue 2026 (energía de congelación); el resto, supuesto |
+| 41 | **Valor local de la víscera** | 0,60–**0,90**–1,20 USD/kg | ❌ SIN FUENTE | No se encontró precio publicado. El modelo calcula el máximo que tolera cada escenario (VAN = 0): 1,08–1,25 USD/kg. Dato prioritario para la entrevista de la Fase 13 |
+| 42 | Carga tributaria | 36,25% (renta 25% + participación de trabajadores 15%); sin arrastre de pérdidas | ✅ | SRI vía Primicias (2025); ≈ 36% según De la Torre e Hidalgo (El Oriente, 2026) |
+| 30 | Producción de cerdo de Ecuador | 2023: 213 mil t (ASPE) / 216.389 t (MAG); 2024 ≈ 223,7 mil t (ASPE +5%, estimado). En silver.assumption: v2 (213–223,65–240 mil t) y v3 (213–230–245 mil t: ASPE 2025 = 230 mil t y 2026e = 245 mil t, vía El Universo); v1 y v2 se conservan | 🆕 | 333 Latinoamérica con datos de ASPE; MAG vía 3tres3 (sep-2024) |
 | 23 | Benchmark Colombia | La OMSA reconoció zonas libres de PPC en 2026 | 🆕 | OMSA (2026) |
 
 ## B. Supuestos (a completar en la Fase 10, con rango mín/base/máx)
