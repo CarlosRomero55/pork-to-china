@@ -98,6 +98,28 @@ def shape_imports(flows: pd.DataFrame, product_keys: dict) -> pd.DataFrame:
     }).replace({np.nan: None})
 
 
+def mirror_coverage(imports: pd.DataFrame, iso_by_key: dict, min_share: float = 0.02,
+                    tolerance: int = 1) -> pd.DataFrame:
+    """
+    Marca los meses COMPLETOS de la base espejo. Relevantes = proveedores con ≥ min_share del volumen
+    en los 12 meses anteriores (los primeros meses usan lo que haya). Completo = reportaron todos los
+    relevantes salvo `tolerance`. Evita leer como caída de mercado lo que solo es un rezago de publicación.
+    """
+    m = imports[imports["basis"] == "mirror"].assign(t=lambda d: pd.to_numeric(d["tonnes"]).fillna(0.0))
+    piv = m.pivot_table(index="date_key", columns="partner_key", values="t", aggfunc="sum").sort_index()
+    rows = []
+    for i, dk in enumerate(piv.index):
+        reported = set(piv.columns[piv.loc[dk].notna()])
+        window = piv.iloc[max(0, i - 12):i] if i else piv.iloc[[0]]
+        vol = window.sum()
+        majors = set(vol[vol >= min_share * vol.sum()].index) if vol.sum() > 0 else reported
+        missing = sorted(iso_by_key.get(k, str(k)) for k in majors - reported)
+        rows.append(dict(date_key=int(dk), reporters=len(reported), major_expected=len(majors),
+                         major_reported=len(majors & reported), missing_major=",".join(missing) or None,
+                         is_complete=len(missing) <= tolerance))
+    return pd.DataFrame(rows)
+
+
 def read_flows(conn) -> pd.DataFrame:
     return pd.read_sql(text(f"""
         SELECT f.period AS date, f.partner_id AS supplier_id, f.hs_code, 'direct' AS basis,
@@ -228,6 +250,7 @@ def main() -> int:
 
         imports = shape_imports(read_flows(conn), pkeys)
         dim_country = with_access(dim_country, imports)
+        coverage = mirror_coverage(imports, dict(zip(dim_country["country_key"], dim_country["iso3"])))
 
         months = pd.read_sql(text(f"SELECT date FROM {GOLD}.dim_date ORDER BY date_key"), conn)["date"]
         measures = pd.read_sql(text(f"""
@@ -245,7 +268,8 @@ def main() -> int:
         production, scenarios = read_production_and_scenarios(conn)
 
         # Reconstrucción completa: primero se vacían los hechos (dependen de las dimensiones)
-        for t in ("fact_tariff_applied", "fact_china_imports", "fact_market_balance", "fact_domestic_production"):
+        for t in ("fact_tariff_applied", "fact_china_imports", "fact_market_balance", "fact_domestic_production",
+                  "mirror_coverage"):
             conn.execute(text(f"DELETE FROM {GOLD}.{t}"))
         upsert_df(conn, dim_country, GOLD, "dim_country", ["iso3", "name_es", "supplier_bloc", "exports_pork_to_china"])
         upsert_df(conn, dim_product, GOLD, "dim_product", ["hs_code", "product_group_es", "description_es", "is_sam"])
@@ -255,6 +279,7 @@ def main() -> int:
         upsert_df(conn, scenarios, GOLD, "dim_scenario", ["code", "trade_case", "china_selfsuff", "cert_year", "label_es"])
         n_bal = insert_df(conn, balance, GOLD, "fact_market_balance")
         n_prod = insert_df(conn, production, GOLD, "fact_domestic_production")
+        insert_df(conn, coverage, GOLD, "mirror_coverage")
 
         print(f"[1/5] Dimensiones: {len(dim_country)} países · {len(dim_product)} líneas HS "
               f"(SAM: {', '.join(dim_product.loc[dim_product['is_sam'], 'hs_code'])})\n"
@@ -264,6 +289,10 @@ def main() -> int:
               f"({len(months)} meses × {len(origins)} orígenes × {len(pkeys)} líneas)".replace(",", "."))
         print(f"      fact_market_balance: {n_bal} filas · fact_domestic_production: {n_prod} · "
               f"dim_scenario: {len(scenarios)} escenarios")
+        inc = coverage[~coverage["is_complete"]]
+        print(f"      Cobertura espejo: {int(coverage['is_complete'].sum())} de {len(coverage)} meses completos · "
+              f"incompletos: " + (", ".join(f"{str(r.date_key)[:4]}-{str(r.date_key)[4:6]} (faltan {r.missing_major})"
+                                           for r in inc.itertuples()) or "ninguno"))
 
         ok = reconcile(conn)
         show_tariffs(conn)
