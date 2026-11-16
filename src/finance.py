@@ -158,7 +158,7 @@ def main() -> int:
         "TIR_%": show["irr_pct"],
         "payback": show["payback_years"],
         "víscera_máx": show["breakeven_offal_usd_kg"],
-        "t_equilibrio": show["breakeven_tonnes"].round(0),
+        "t_equilibrio": pd.to_numeric(show["breakeven_tonnes"], errors="coerce").round(0),
         "divisas_MUSD": (show["fx_usd"] / 1e6).round(1),
         "empleos": show["jobs"]})
     print("\nResultados por escenario (VAN al 12%; víscera_máx = valor local de la víscera con el que VAN = 0)")

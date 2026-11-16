@@ -82,19 +82,40 @@ def test_npv_equals_sum_of_discounted_flows(conn):
     assert bad == 0
 
 
-def test_earlier_certification_is_worth_more(conn):
+def test_earlier_certification_tolerates_a_higher_local_value(conn):
+    """Certificar antes deja más años de exportación: el valor local máximo que aguanta el proyecto sube.
+    (No depende del valor base de la víscera, a diferencia del VAN, que puede ser negativo en todos.)"""
     rows = conn.execute(text("""
-        SELECT s.trade_case, s.china_selfsuff, s.cert_year, r.npv_usd FROM pork_gold.fact_scenario_result r
+        SELECT s.trade_case, s.china_selfsuff, s.cert_year, r.breakeven_offal_usd_kg FROM pork_gold.fact_scenario_result r
         JOIN pork_gold.dim_scenario s ON s.scenario_key = r.scenario_key WHERE s.cert_year IS NOT NULL""")).all()
     by = {}
-    for tc, cs, cy, npv in rows:
-        by.setdefault((tc, cs), {})[cy] = float(npv)
+    for tc, cs, cy, be in rows:
+        by.setdefault((tc, cs), {})[cy] = float(be)
     for v in by.values():
         assert v[2] > v[4] > v[6]
 
 
-def test_positive_npv_means_offal_breakeven_above_base(conn):
-    bad = conn.execute(text("""
-        SELECT COUNT(*) FROM pork_gold.fact_scenario_result
-        WHERE npv_usd > 0 AND breakeven_offal_usd_kg <= 0.90""")).scalar()
-    assert bad == 0
+def test_npv_sign_matches_offal_breakeven_vs_base(conn):
+    """VAN > 0 si y solo si el valor local base de la víscera está por debajo del máximo que tolera el escenario."""
+    base = conn.execute(text("""
+        SELECT a.value_base FROM pork_silver.assumption a
+        WHERE a.name = 'offal_local_value_usd_kg' ORDER BY a.version DESC LIMIT 1""")).scalar()
+    rows = conn.execute(text("""
+        SELECT npv_usd, breakeven_offal_usd_kg FROM pork_gold.fact_scenario_result
+        WHERE breakeven_offal_usd_kg IS NOT NULL""")).all()
+    assert rows
+    for npv, be in rows:
+        assert (float(npv) > 0) == (float(be) > float(base))
+
+
+def test_scenarios_use_the_sourced_offal_value(conn):
+    """Migración 015: los 24 escenarios usan la v2 del valor local de la víscera (con referencias), no la v1."""
+    versions = conn.execute(text("""
+        SELECT DISTINCT a.version FROM pork_silver.scenario_assumption sa
+        JOIN pork_silver.assumption a ON a.assumption_id = sa.assumption_id
+        WHERE a.name = 'offal_local_value_usd_kg'""")).scalars().all()
+    assert versions == [2]
+    src = conn.execute(text("""
+        SELECT a.source_id FROM pork_silver.assumption a
+        WHERE a.name = 'offal_local_value_usd_kg' AND a.version = 2""")).scalar()
+    assert src is not None

@@ -1,0 +1,2 @@
+interview_id,interview_date,actor_type,question_id,product,answer_text,value,unit,price_level,confidence,notes
+E01,2026-11-20,faenadora,A2,patas,"Ejemplo: se venden al mayorista a 0,60 la libra",0.60,USD/lb,planta,media,"EJEMPLO: borrar esta fila antes de cargar"

@@ -29,8 +29,8 @@ with left:
                         help="A/B/C = caso comercial · up/down = autosuficiencia china · número = año de certificación")
     base = inputs(code)
     p = base.params
-    offal = st.slider("Valor local de la víscera (USD/kg)", 0.0, 1.6, float(p["offal_local_value_usd_kg"]), 0.05,
-                      help="Lo que vale la víscera en Ecuador: es el dato que no se pudo verificar.")
+    offal = st.slider("Valor local de la víscera (USD/kg)", 0.0, 3.0, float(p["offal_local_value_usd_kg"]), 0.05,
+                      help="Lo que vale la víscera en Ecuador. Base: precios públicos de patas y cuero × margen de cadena (supuesto).")
     fob = st.slider("Precio FOB de venta (USD/kg)", 1.0, 2.6, float(p["ecuador_fob_usd_kg_offal"]), 0.05)
     rate = st.slider("Tasa de descuento (%)", 8.0, 20.0, float(p["discount_rate"]), 0.5)
     cap = st.slider("Capacidad de AgroPorc (t/año)", 1000, 10000, int(p["agroporc_capacity_t"]), 500)
@@ -40,9 +40,9 @@ r = sim.run(base, capex_factor=capex, discount_rate=rate, offal_local_value_usd_
             capacity_t=cap)
 with right:
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("VAN (M USD)", es(r.npv_usd / 1e6, 2), f"{es(r.delta_npv_usd / 1e6, 2)} vs base",
+    m1.metric("VAN (M USD)", es(r.npv_usd / 1e6, 2), f"{es(r.delta_npv_usd / 1e6, 2)} vs base", delta_color="normal" if abs(r.delta_npv_usd) >= 1 else "off",
               help="Valor actual neto a la tasa elegida; la diferencia es contra el escenario sin cambios.")
-    m2.metric("TIR", "—" if r.irr_pct is None else f"{es(r.irr_pct, 1)}%")
+    m2.metric("TIR", "—" if r.irr_pct is None else f"{es(r.irr_pct, 0 if abs(r.irr_pct) >= 10 else 1)}%")
     m3.metric("Payback (años)", "nunca" if r.payback_years is None else es(r.payback_years, 1))
     m4.metric("Víscera máx. (USD/kg)", "—" if r.breakeven_offal_usd_kg is None else es(r.breakeven_offal_usd_kg, 2),
               help="Valor local de la víscera con el que el VAN es cero.")
@@ -50,7 +50,7 @@ with right:
     st.markdown(f"Con estos supuestos, exportar **{verdict}**: VAN de **{es(r.npv_usd)} USD** y "
                 f"**{es(r.total_tonnes)} t** vendidas en 10 años.")
 
-    grid = np.round(np.arange(0.0, 1.61, 0.05), 2)
+    grid = np.round(np.arange(0.0, 3.01, 0.05), 2)
     npv = [sim.run(base, capex_factor=capex, discount_rate=rate, offal_local_value_usd_kg=v, fob_usd_kg=fob,
                    capacity_t=cap).npv_usd / 1e6 for v in grid]
     fig = go.Figure(go.Scatter(x=grid, y=npv, mode="lines", line=dict(color=SERIES[0], width=2),
@@ -61,7 +61,7 @@ with right:
     if r.breakeven_offal_usd_kg is not None and 0 <= r.breakeven_offal_usd_kg <= 1.6:
         fig.add_vline(x=r.breakeven_offal_usd_kg, line=dict(color=INK_3, dash="dot", width=1),
                       annotation_text=f"equilibrio {es(r.breakeven_offal_usd_kg, 2)}", annotation_position="top")
-    fig.update_layout(title="VAN según el valor local de la víscera (millones de USD; naranja = tu supuesto)")
+    fig.update_layout(title="VAN (M USD) según el valor local de la víscera · naranja = tu supuesto")
     fig.update_xaxes(title="Valor local de la víscera (USD/kg)")
     fig.update_yaxes(ticksuffix=" M")
     st.plotly_chart(style(fig, height=380), width="stretch", config=CHART_CONFIG)
