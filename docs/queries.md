@@ -1,6 +1,6 @@
 # Consultas SQL de negocio
 
-Generado por `src/run_queries.py` el 2026-11-15 con el usuario de solo lectura `pork_bi` sobre `pork_gold`. Cada consulta está en `sql/queries/`.
+Generado por `src/run_queries.py` el 2026-11-16 con el usuario de solo lectura `pork_bi` sobre `pork_gold`. Cada consulta está en `sql/queries/`.
 
 ## q01_trade_diversion
 
@@ -165,3 +165,152 @@ Generado por `src/run_queries.py` el 2026-11-15 con el usuario de solo lectura `
 | 2025 | 59.380 | 1.186 | 98,24 | 0,31 | 1.463 | 22,5 | cerrado |
 | 2026 | 59.680 | 840 | 98,88 | 0,64 | 1.111 | 15,9 | proyección |
 | 2027 | 58.350 | 820 | 98,95 | 0,07 | 949 | 15,5 | proyección |
+
+## q07_seasonality
+
+**Pregunta:** ¿En qué meses compra más China? Índice estacional para planificar embarques (vísceras y carne).  
+**Técnica:** CTE + participación de cada mes en su año con SUM() OVER (PARTITION BY año), promediada entre años; índice = 100 × participación media × 12 (100 = mes promedio)  
+**Fuente:** pork_gold.fact_china_imports, base espejo, 2022–2025 (años completos, después del pico de la PPA)  
+**Lectura:** estacionalidad moderada (±8%). Vísceras: picos en noviembre (108), marzo (106) y octubre (105); piso en septiembre (93). Conviene que los embarques lleguen en octubre–noviembre.  
+
+[Ver SQL](../sql/queries/q07_seasonality.sql) · 12 filas
+
+| mes | nombre | indice_visceras | indice_carne | t_visceras_prom |
+|---|---|---|---|---|
+| 1 | enero | 96 | 110 | 87.763 |
+| 2 | febrero | 96 | 102 | 88.314 |
+| 3 | marzo | 106 | 105 | 96.764 |
+| 4 | abril | 99 | 98 | 91.347 |
+| 5 | mayo | 96 | 92 | 87.922 |
+| 6 | junio | 101 | 97 | 92.701 |
+| 7 | julio | 102 | 98 | 93.647 |
+| 8 | agosto | 101 | 97 | 92.189 |
+| 9 | septiembre | 93 | 94 | 85.224 |
+| 10 | octubre | 105 | 103 | 95.798 |
+| 11 | noviembre | 108 | 106 | 99.123 |
+| 12 | diciembre | 97 | 98 | 89.069 |
+
+## q08_fob_price_benchmark
+
+**Pregunta:** ¿A qué precio FOB vende cada proveedor a China en las líneas del SAM? ¿Dónde queda Chile, la referencia de precio para Ecuador?  
+**Técnica:** CTE + valor unitario ponderado (SUM(valor)/SUM(kg)) + PERCENT_RANK() y diferencia contra Chile con MAX(CASE ...) OVER (PARTITION BY línea)  
+**Fuente:** pork_gold.fact_china_imports, base espejo (FOB: lo que cobra el exportador), 2025, sin filas marcadas como atípicas ni proveedores con menos de 500 t en la línea  
+**Lectura:** Chile es el más barato en carne congelada (020329: 1,35 USD/kg FOB) y vende vísceras (020649) a 1,60 USD/kg, percentil 33, por debajo de España (1,86) y EE. UU. (1,90). Referencia de ingreso para Ecuador en el modelo financiero: ~1,60 USD/kg FOB en vísceras.  
+
+[Ver SQL](../sql/queries/q08_fob_price_benchmark.sql) · 31 filas
+
+| hs | proveedor | toneladas | fob_usd_kg | percentil | vs_chile |
+|---|---|---|---|---|---|
+| 020322 | Países Bajos | 8.525 | 2,10 | 100,00 | 0,47 |
+| 020322 | España | 68.466 | 2,08 | 89,00 | 0,46 |
+| 020322 | Francia | 5.138 | 1,95 | 78,00 | 0,33 |
+| 020322 | Brasil | 11.274 | 1,94 | 67,00 | 0,32 |
+| 020322 | Irlanda | 26.032 | 1,71 | 33,00 | 0,08 |
+| 020322 | Canadá | 5.355 | 1,71 | 44,00 | 0,08 |
+| 020322 | Reino Unido | 2.595 | 1,71 | 56,00 | 0,08 |
+| 020322 | Estados Unidos | 2.275 | 1,66 | 22,00 | 0,04 |
+| 020322 | Chile | 32.031 | 1,62 | 11,00 | 0,00 |
+| 020322 | Dinamarca | 9.566 | 1,17 | 0,00 | -0,46 |
+| 020329 | Alemania | 1.283 | 2,89 | 100,00 | 1,54 |
+| 020329 | España | 152.713 | 2,70 | 90,00 | 1,35 |
+| 020329 | Dinamarca | 46.845 | 2,44 | 80,00 | 1,09 |
+| 020329 | Irlanda | 13.887 | 2,36 | 70,00 | 1,02 |
+| 020329 | Estados Unidos | 100.068 | 2,23 | 60,00 | 0,88 |
+| 020329 | Brasil | 126.317 | 2,21 | 50,00 | 0,86 |
+| 020329 | Francia | 35.091 | 2,19 | 40,00 | 0,84 |
+| 020329 | Países Bajos | 44.847 | 2,15 | 30,00 | 0,80 |
+| 020329 | Reino Unido | 41.434 | 1,90 | 20,00 | 0,55 |
+| 020329 | Canadá | 47.678 | 1,55 | 10,00 | 0,20 |
+| 020329 | Chile | 30.966 | 1,35 | 0,00 | 0,00 |
+| 020649 | Brasil | 21.491 | 2,92 | 100,00 | 1,33 |
+| 020649 | Francia | 70.543 | 2,08 | 89,00 | 0,48 |
+| 020649 | Países Bajos | 92.337 | 1,98 | 78,00 | 0,39 |
+| 020649 | Dinamarca | 93.558 | 1,93 | 67,00 | 0,33 |
+| 020649 | Estados Unidos | 245.595 | 1,90 | 56,00 | 0,31 |
+| 020649 | España | 277.835 | 1,86 | 44,00 | 0,26 |
+| 020649 | Chile | 38.020 | 1,60 | 33,00 | 0,00 |
+| 020649 | Reino Unido | 90.161 | 1,58 | 22,00 | -0,02 |
+| 020649 | Canadá | 94.396 | 1,50 | 11,00 | -0,10 |
+
+*… y 1 filas más (ver la consulta completa).*
+
+## q09_fifth_quarter
+
+**Pregunta:** ¿Cuántas toneladas de vísceras vende cada país a China por cada tonelada de carne? (el "quinto cuarto": vísceras que en el mercado local valen poco y en China valen más)  
+**Técnica:** pivoteo con SUM(CASE ...) + razón + RANK()  
+**Fuente:** pork_gold.fact_china_imports, base espejo, 2025  
+**Lectura:** Dinamarca y EE. UU. venden 2,3 t de vísceras por cada t de carne; Chile solo 0,6 y Brasil 0,16. Los proveedores lejanos de Europa/EE. UU. monetizan en China el quinto cuarto que su mercado local no paga.  
+
+[Ver SQL](../sql/queries/q09_fifth_quarter.sql) · 11 filas
+
+| proveedor | t_visceras | t_carne | visceras_por_t_carne | pct_visceras | musd_visceras | puesto |
+|---|---|---|---|---|---|---|
+| Dinamarca | 130.293 | 56.505 | 2,31 | 69,8 | 222,80 | 1 |
+| Estados Unidos | 245.595 | 107.593 | 2,28 | 69,5 | 467,40 | 2 |
+| Reino Unido | 90.161 | 45.477 | 1,98 | 66,5 | 142,40 | 3 |
+| Canadá | 94.396 | 53.070 | 1,78 | 64,0 | 141,50 | 4 |
+| Países Bajos | 93.321 | 53.379 | 1,75 | 63,6 | 185,80 | 5 |
+| Francia | 70.629 | 41.021 | 1,72 | 63,3 | 147,10 | 6 |
+| España | 278.304 | 222.569 | 1,25 | 55,6 | 517,20 | 7 |
+| Chile | 38.094 | 62.997 | 0,60 | 37,7 | 60,70 | 8 |
+| Irlanda | 14.918 | 39.995 | 0,37 | 27,2 | 19,90 | 9 |
+| Brasil | 21.492 | 137.596 | 0,16 | 13,5 | 62,80 | 10 |
+| Alemania | 11 | 1.283 | 0,01 | 0,9 | 0,00 | 11 |
+
+## q10_weighted_tariff
+
+**Pregunta:** ¿Cuánto arancel paga en promedio el cerdo que entra a China, ponderado por volumen, y cómo cambió?  
+**Técnica:** unión de dos tablas de hechos por sus claves comunes + media ponderada SUM(tasa × t) / SUM(t) + LAG() para el cambio interanual en puntos  
+**Fuente:** pork_gold.fact_china_imports (espejo, 12 exportadores) × pork_gold.fact_tariff_applied (arancel efectivo mínimo: NMF o acuerdo + adicionales + antidumping mínimo), 2018–2026, solo meses completos  
+**Lectura:** el arancel promedio que paga la víscera que entra a China subió de 19,1% (2024) a 26,1% (2025), +7,0 pp: China sigue comprando a proveedores castigados. Un proveedor con 0–10% tendría ventaja real.  
+
+[Ver SQL](../sql/queries/q10_weighted_tariff.sql) · 9 filas
+
+| año | arancel_carne | arancel_visceras | cambio_visceras_pp | toneladas |
+|---|---|---|---|---|
+| 2018 | 13,1 | 13,4 | — | 2.030.816 |
+| 2019 | 15,8 | 15,8 | 2,4 | 3.405.046 |
+| 2020 | 12,4 | 15,9 | 0,1 | 5.451.785 |
+| 2021 | 11,1 | 18,2 | 2,3 | 4.171.585 |
+| 2022 | 14,4 | 19,3 | 1,1 | 2.844.511 |
+| 2023 | 14,3 | 18,8 | -0,5 | 2.466.459 |
+| 2024 | 14,8 | 19,1 | 0,3 | 2.223.912 |
+| 2025 | 20,7 | 26,1 | 7,0 | 1.898.825 |
+| 2026 | 20,9 | 26,1 | 0,0 | 1.082.704 |
+
+## q11_leadership_changes
+
+**Pregunta:** En cada línea del SAM, ¿quién es el proveedor n.º 1 hoy, desde cuándo, y cuántas veces cambió el líder?  
+**Técnica:** ROW_NUMBER() para el líder de cada mes + LAG() para detectar el cambio + conteo de "rachas" (técnica gaps-and-islands)  
+**Fuente:** pork_gold.fact_china_imports, base espejo, solo meses completos (mirror_coverage: en 2026-09 solo habían reportado Brasil y Chile, y Chile aparecía como líder)  
+**Lectura:** el liderazgo es inestable: en vísceras (020649) cambió 34 veces desde 2018 entre solo 3 países, y EE. UU. vuelve a liderar en 2026 pese al 47%. En carne congelada con hueso (020322) España lidera desde 2022.  
+
+[Ver SQL](../sql/queries/q11_leadership_changes.sql) · 4 filas
+
+| hs | lider_actual | lider_desde | meses_seguidos | cambios_de_lider | lideres_distintos |
+|---|---|---|---|---|---|
+| 020322 | España | 2022-02 | 55 | 12 | 4 |
+| 020329 | Brasil | 2026-08 | 1 | 26 | 4 |
+| 020641 | Irlanda | 2026-08 | 1 | 35 | 10 |
+| 020649 | Estados Unidos | 2026-07 | 2 | 34 | 3 |
+
+## q12_sam_size
+
+**Pregunta:** ¿De qué tamaño es el mercado que Ecuador podría atacar (SAM: carne y vísceras congeladas) y qué parte está en manos de proveedores castigados con aranceles altos (EE. UU. y Canadá)?  
+**Técnica:** CTE encadenadas + agregación condicional + participación de la parte "disputable"  
+**Fuente:** pork_gold.fact_china_imports, base espejo (12 exportadores, FOB), líneas is_sam, solo meses completos (2026: ene–ago y sin Francia, que no reporta desde enero)  
+**Lectura:** el SAM de 2025 es 1,85 millones de t y 3.672 MUSD FOB (−14% vs 2024). El 26,8% (495 mil t) lo venden EE. UU. y Canadá con aranceles de 37–47%. Captar 1% del SAM (~18.500 t) equivale a ~8% de la producción de Ecuador (223.650 t en 2024).  
+
+[Ver SQL](../sql/queries/q12_sam_size.sql) · 9 filas
+
+| año | sam_t | sam_musd | fob_usd_kg | pct_eeuu_canada | t_eeuu_canada | meses |
+|---|---|---|---|---|---|---|
+| 2018 | 1.976.895 | 3.198,00 | 1,62 | 23,4 | 462.434 | 12 |
+| 2019 | 3.130.763 | 6.985,00 | 2,23 | 19,9 | 623.878 | 12 |
+| 2020 | 5.110.578 | 12.438,00 | 2,43 | 26,6 | 1.360.026 | 12 |
+| 2021 | 4.017.102 | 9.865,00 | 2,46 | 23,4 | 939.624 | 12 |
+| 2022 | 2.746.615 | 6.386,00 | 2,33 | 25,0 | 685.452 | 12 |
+| 2023 | 2.392.570 | 5.337,00 | 2,23 | 29,0 | 694.700 | 12 |
+| 2024 | 2.160.552 | 4.306,00 | 1,99 | 31,5 | 680.935 | 12 |
+| 2025 | 1.851.556 | 3.672,00 | 1,98 | 26,8 | 495.367 | 12 |
+| 2026 | 1.052.737 | 1.935,00 | 1,84 | 31,9 | 336.175 | 8 |

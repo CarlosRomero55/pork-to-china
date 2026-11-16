@@ -112,3 +112,20 @@ def test_balance_is_pivoted_with_ratios_and_projection_flag():
     assert not out.loc[("CH", 2025), "is_projection"] and out.loc[("CH", 2026), "is_projection"]
     assert out.loc[("E4", 2025), "consumption_kt"] is None          # atributo ausente → NULL, no cero
     assert "Total Supply" not in out.columns                         # solo los atributos del modelo
+
+
+def test_mirror_coverage_ignores_tiny_reporters_and_flags_lagged_months():
+    """Un mes es completo si reportaron los relevantes (≥ 2%) salvo uno; los esporádicos no cuentan."""
+    rows = []
+    for m in range(1, 15):                                    # 14 meses: 2025-01 … 2026-02
+        dk = (2025 + (m - 1) // 12) * 10000 + ((m - 1) % 12 + 1) * 100 + 1
+        for key, t in [(US, 500.0), (ES, 400.0), (CL, 100.0)]:
+            if m == 14 and key != CL:
+                continue                                       # último mes: solo reporta Chile
+            rows.append(dict(date_key=dk, partner_key=key, basis="mirror", tonnes=t))
+        if m == 5:
+            rows.append(dict(date_key=dk, partner_key=GB, basis="mirror", tonnes=1.0))   # esporádico
+    cov = bg.mirror_coverage(pd.DataFrame(rows), {US: "USA", ES: "ESP", CL: "CHL", GB: "GBR"}).set_index("date_key")
+    assert cov["is_complete"].iloc[:-1].all()                  # el país esporádico no exige nada
+    last = cov.iloc[-1]
+    assert not last["is_complete"] and last["missing_major"] == "ESP,USA"

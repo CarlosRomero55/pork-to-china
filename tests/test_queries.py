@@ -66,3 +66,17 @@ def test_q05_reproduces_verified_tariffs(conn):
 def test_q06_peak_is_2020(conn):
     df = q(conn, "q06").set_index("año")
     assert float(df.loc[2020, "pct_del_pico"]) == 100
+
+
+def test_dashboard_views_are_readable_by_bi(conn):
+    for v in ("v_dash_supplier_monthly", "v_dash_tariff", "v_dash_china_balance", "v_dash_sam_yearly"):
+        assert conn.execute(text(f"SELECT COUNT(*) FROM pork_gold.{v}")).scalar() > 0, v
+
+
+def test_q11_and_q12_use_only_complete_months(conn):
+    sam = q(conn, "q12").set_index("año")
+    assert int(sam.loc[2025, "meses"]) == 12
+    last_complete = conn.execute(text(
+        "SELECT MAX(date_key) FROM pork_gold.mirror_coverage WHERE is_complete")).scalar()
+    leaders = q(conn, "q11")
+    assert (leaders["lider_desde"] <= f"{str(last_complete)[:4]}-{str(last_complete)[4:6]}").all()
