@@ -36,6 +36,7 @@
 | 27 | Balance de cerdo de China (USDA PSD) | Producción 2025 59.380 mil t CWE (= NBS); importaciones 1.186 (2025) → 840 (2026e) → 820 (2027p), 1,4% del consumo | 🆕 ✅ | USDA FAS PSD Online, psd_livestock_csv.zip (15-nov-2026) |
 | 28 | API de USDA PSD | HTTP 500 en todas las rutas con llave válida (nov-2026) → se usa la descarga masiva | 🆕 | Diagnóstico propio (extract_psd --probe) |
 | 29 | Acuerdo Ecuador–China para cerdo | Vigente desde 1-may-2024; "proteínas crudas de cerdo: 15 años". Modelado como desgravación lineal desde el NMF de cada línea (0203, 0206) → 0% en 2038; congelado 2025 ≈ 10,4%. Reemplaza al NMF y requiere protocolo sanitario (no firmado) | ⚠️ supuesto | El Comercio (10-may-2023), Datasur; calendario oficial por línea no encontrado |
+| 31 | TLC de competidores | Chile (TLC 2006) y Costa Rica (TLC 2011) exportan cerdo a China con arancel 0% (0203 y 0206) | ✅ | ChileCarne vía Xinhua (2019); EY vía Revista EyN (2019) |
 | 30 | Producción de cerdo de Ecuador | 2023: 213 mil t (ASPE) / 216.389 t (MAG); 2024 ≈ 223,7 mil t (ASPE +5%, estimado) | 🆕 | 333 Latinoamérica con datos de ASPE; MAG vía 3tres3 (sep-2024) |
 | 23 | Benchmark Colombia | La OMSA reconoció zonas libres de PPC en 2026 | 🆕 | OMSA (2026) |
 

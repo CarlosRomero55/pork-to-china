@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** Fases 4–6 (silver) cerradas y verificadas en el PC → siguiente Fase 7 (gold)
+- **Paso:** 7.1 listo (gold: dimensiones, importaciones de China, arancel aplicado) → Carlos corre `.\gold.ps1`
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 7.1 · Migraciones 005 (gold v1: basis directo/espejo, fact_tariff_applied, vista v_supplier_tonnes) y 006 (TLC Chile y Costa Rica 0%; arancel efectivo; acceso observado). build_gold.py: reconstrucción completa ~20 s; 10.488 filas de importaciones y 101.520 de arancel; gold = silver exacto (directo 23,1 Mt, espejo 25,6 Mt) y reproduce 37/172/57/47% a EE. UU. Hallazgo: vísceras congeladas 2026-11 → Chile 0% con acceso, Ecuador 9,6% (supuesto) SIN acceso; UE 16,9–31,8%; EE. UU. 47%. ADR-009. 83/83 pytest
 - 2026-11-15 · 4.3c-v2 · validate.ps1 en el PC: 10 OK · 2 alertas · 0 errores, 75/75 pytest. Silver cerrado
 - 2026-11-15 · 4.3c-v · validate.ps1 en el PC: migración 004 OK, 10 OK · 2 alertas · 0 errores; falló 1 prueba frágil (ZIP de prueba con fecha actual → huella distinta si cruza un segundo par en equipos lentos). Corregido con fecha fija
 - 2026-11-15 · 4.3c · Migración 004: NMF verificado por línea (congelado 12, fresco 20, 0210 25; corrige el 12% sembrado en 4 líneas frescas y agrega 0210); SCD2 real del 8% provisional 2020–2021 en 020322/020329; medida preferential Ecuador (supuesto lineal 15 años, 0% en 2038); tabla country_production (ASPE 2023 213 mil t, 2024e 223,7; MAG 2023 216.389). 75/75 pytest, R10 OK
@@ -73,6 +74,7 @@
 | 2026-11-13 | Corte vertical: Comtrade a silver antes de extraer otras fuentes | — |
 | 2026-11-13 | Cambios de esquema con migraciones versionadas (sql/migrations + schema_migration) | — |
 | 2026-11-13 | Canadá es proveedor sancionado (25% desde 20-mar-2025) → nuevo corte de análisis | — |
+| 2026-11-15 | Gold se reconstruye completo; arancel aplicado precalculado (tasa del día 15, bloques por fecha de pertenencia, antidumping como rango, acuerdo reemplaza al NMF); acceso = ventas observadas en 24 meses (ADR-009) | ADR-009 |
 | 2026-11-15 | Arancel preferencial de Ecuador REEMPLAZA al NMF (no se suma) y solo aplica en escenarios con protocolo sanitario; corrección de datos mal sembrados se hace en sitio, cambios reales en el tiempo con SCD2 | — |
 | 2026-11-15 | USDA en silver en formato largo (país × año × atributo); no se suma con Comtrade (CWE sin vísceras vs. peso neto con vísceras) | — |
 | 2026-11-15 | Filas dudosas se marcan (quality_flag), no se borran; gold las excluye del precio promedio pero no del volumen | — |
@@ -98,6 +100,7 @@
 - [ ] ADR-003, ADR-004 y ADR-005
 - [ ] Verificar por qué Ecuador 2025 no figura en getDa y si el envío a Costa de Marfil 2023 salió por HS 1602
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
+- [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Fase 7:** modelo gold (estrella Kimball): dim_date, dim_country, dim_product, fact_trade, fact_tariff (arancel aplicado = NMF o preferencial + adicionales por origen y fecha), fact_balance (USDA).
+**Paso 7.2:** hechos de balance (USDA) y producción de Ecuador en gold + dim_scenario/dim_province; luego Fase 8 (modelo de costo puesto en China: FOB + flete + seguro + arancel efectivo).
