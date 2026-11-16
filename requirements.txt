@@ -29,6 +29,7 @@ pytest==9.2.0
 # --- API ---
 fastapi==0.162.7
 uvicorn==0.54.0
+httpx2==2.16.2
 
 # --- Visualización y notebooks ---
 matplotlib==3.11.2

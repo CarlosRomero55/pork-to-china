@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** FASE 10 CERRADA (modelo analítico y financiero, verificado en el PC) → siguiente Fase 11 (API con FastAPI). Faltan 6 fases (11–16)
+- **Paso:** FASE 11 CERRADA (API verificada en el PC) → siguiente Fase 12 (tablero en Streamlit con el simulador). Faltan 5 fases (12–16)
 - **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
@@ -26,6 +26,8 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-16 · 11.1-v · En el PC: setup.ps1 instaló httpx2; pipeline corrida 36: 10/10 OK, 152 passed en 8,1 s sin omitidas (registro logs/runs leído por Claude); api.ps1 abrió /docs. Fusionado a main. FASE 11 CERRADA
+- 2026-11-16 · 11.1 · (rama feat/fase-11-api) API FastAPI en src/api/main.py: /health, /scenarios, /scenarios/{code}, /tariffs, /landed-cost, /market/china-balance y POST /simulate; todo con pork_bi. Migración 014: vistas v_scenario_params y v_last_pipeline_run (SQL SECURITY DEFINER) para no dar a pork_bi permisos sobre silver/bronze (verificado: sigue sin poder leer silver). /simulate reutiliza finance.evaluate(): sin cambios reproduce el VAN del pipeline (Δ = 0). Validación Pydantic → 422; inexistente → 404. Dependencia nueva aprobada por Carlos: httpx2 2.16.2 (Starlette 1.10 ya no usa httpx) para TestClient; requirements actualizado y verificado para Windows/Py 3.14. api.ps1 levanta uvicorn y abre /docs. docs/api.md. Dentro del pipeline /health ve la corrida en curso ('running'): la prueba lo acepta. Booleanos de MySQL (TINYINT) → true/false en el JSON. Servidor uvicorn verificado con curl. 152/152 pytest
 - 2026-11-16 · 10.3-v · pipeline.ps1 en el PC: 10/10 OK en 63 s (migración 013); pruebas 9,2 s con 137 (antes 13–32 s con 100). Fusionado a main. FASE 10 CERRADA
 - 2026-11-16 · 10.3 · (rama feat/fase-10-van-tir) Migración 013: 14 supuestos financieros con fuente o marca de supuesto (inversión 367–555–870 mil USD, costos variables, fijos, impuesto 36,25%, capital de trabajo, empleos), producción de Ecuador v3 (ASPE 2025 = 230 mil t), columnas nuevas en fact_scenario_result. src/finance.py: flujo de caja 0–10 por escenario (fact_scenario_cashflow 264 filas), VAN, TIR, payback simple y descontado, divisas, empleos, toneladas de equilibrio y VALOR LOCAL MÁXIMO DE LA VÍSCERA (VAN = 0). ADR-010. Resultados: margen 0,45 USD/kg (FOB 1,60 − costo 1,15); VAN positivo en los 18 escenarios con certificación (de +0,48 M en A-up-6 a +4,69 M en C-down-2) y −0,555 M en los 6 sin certificación; TIR 21–70%; equilibrio con solo 707–1.483 t/año; víscera máxima 1,08–1,25 USD/kg vs base 0,90 (sin fuente). Cada 2 años de demora en la certificación cuestan ~1,1–1,8 M de VAN. 137/137 pytest
 - 2026-11-16 · 10.2-v · pipeline.ps1 en el PC: 9/9 OK en 71 s (migración 012). Fusionado a main
@@ -124,4 +126,4 @@
 - [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Cierre Fase 10:** preguntas de entrevista. Luego **Fase 11:** API con FastAPI (endpoints de escenarios, arancel efectivo, costo puesto en China y resultados, con pork_bi).
+**Fase 12:** tablero en Streamlit con el simulador What-If (lee las vistas v_dash_* con pork_bi y usa la misma lógica de /simulate).
