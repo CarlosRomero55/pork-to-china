@@ -30,17 +30,24 @@ UPDATE_COLS = ["net_weight_kg", "value_usd", "quality_flag", "batch_id"]
 CHINA = 156
 
 
-def latest_comtrade_responses(conn):
+def latest_comtrade_responses(conn, years: set[int] | None = None):
     """
     Genera (batch_id, request_params, payload) · solo la última versión de cada consulta distinta.
 
     En 2 pasos a propósito: ordenar o agrupar filas que llevan el JSON completo (cientos de KB)
     agota el sort buffer de MySQL ("Out of sort memory"). Primero se obtienen solo los IDs
     (consulta liviana) y luego cada payload se lee por su clave primaria, uno a la vez.
+
+    years: si se indica, solo las consultas de esos años (las pruebas usan años ficticios y así
+    no releen todo bronze: era la mitad del tiempo de la suite).
     """
+    year_filter = ""
+    if years:
+        year_filter = " AND LEFT(JSON_UNQUOTE(JSON_EXTRACT(request_params, '$.period')), 4) IN (" + \
+                      ",".join(f"'{int(y)}'" for y in sorted(years)) + ")"
     ids = conn.execute(text(f"""
         SELECT MAX(raw_id) FROM {BRONZE}.raw_api_response
-        WHERE source_name = 'comtrade'
+        WHERE source_name = 'comtrade'{year_filter}
         GROUP BY endpoint, payload_hash IS NOT NULL, CAST(request_params AS CHAR(2000))""")).scalars().all()
     for raw_id in sorted(ids):
         b, p, pl = conn.execute(text(f"SELECT batch_id, request_params, payload FROM {BRONZE}.raw_api_response "
@@ -58,12 +65,12 @@ def ensure_sources(conn) -> dict[str, int]:
                                   "WHERE name IN ('comtrade','comtrade_mirror')")).all())
 
 
-def build_flows(conn) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Devuelve (filas listas para silver, filas en cuarentena)."""
+def build_flows(conn, years: set[int] | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Devuelve (filas listas para silver, filas en cuarentena). `years` limita a esos años (pruebas)."""
     sources = ensure_sources(conn)
     countries = dict(conn.execute(text(f"SELECT comtrade_code, country_id FROM {SILVER}.country")).all())
     frames = []
-    for batch_id, params, payload in latest_comtrade_responses(conn):
+    for batch_id, params, payload in latest_comtrade_responses(conn, years):
         df = parse_comtrade(payload)
         if df.empty:
             continue

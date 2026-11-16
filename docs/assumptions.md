@@ -37,7 +37,10 @@
 | 28 | API de USDA PSD | HTTP 500 en todas las rutas con llave válida (nov-2026) → se usa la descarga masiva | 🆕 | Diagnóstico propio (extract_psd --probe) |
 | 29 | Acuerdo Ecuador–China para cerdo | Vigente desde 1-may-2024; "proteínas crudas de cerdo: 15 años". Modelado como desgravación lineal desde el NMF de cada línea (0203, 0206) → 0% en 2038; congelado 2025 ≈ 10,4%. Reemplaza al NMF y requiere protocolo sanitario (no firmado) | ⚠️ supuesto | El Comercio (10-may-2023), Datasur; calendario oficial por línea no encontrado |
 | 31 | TLC de competidores | Chile (TLC 2006) y Costa Rica (TLC 2011) exportan cerdo a China con arancel 0% (0203 y 0206) | ✅ | ChileCarne vía Xinhua (2019); EY vía Revista EyN (2019) |
-| 30 | Producción de cerdo de Ecuador | 2023: 213 mil t (ASPE) / 216.389 t (MAG); 2024 ≈ 223,7 mil t (ASPE +5%, estimado) | 🆕 | 333 Latinoamérica con datos de ASPE; MAG vía 3tres3 (sep-2024) |
+| 32 | Flete reefer 40' hacia China | Pacífico 3.000–4.500–7.500 · Brasil 3.500–5.500–8.000 · Europa 2.500–4.300–5.600 · Norteamérica 2.000–3.500–5.000 USD/contenedor; carga 20–24–26 t | ⚠️ supuesto con rango | Delpa Group (reefer 40' China–Chile USD 4.500–7.500, 2026); Gerudo Logistics (reefer 40' China–Europa USD 4.300–5.600, jun-2026; 20–24 t por contenedor). Sensibilidad: el orden de proveedores no cambia en el mínimo ni en el máximo |
+| 33 | Seguro de carga | 0,2–0,3–0,5% del CIF | ⚠️ supuesto | Práctica comercial, sin fuente específica; impacto < 0,01 USD/kg |
+| 34 | Precio FOB de Ecuador | Tomador de precio: el FOB de Chile en cada línea (2025: vísceras 020649 1,60 USD/kg; carne 020329 1,35) | ⚠️ supuesto | Consulta q08 (gold, espejo 2025) |
+| 30 | Producción de cerdo de Ecuador | 2023: 213 mil t (ASPE) / 216.389 t (MAG); 2024 ≈ 223,7 mil t (ASPE +5%, estimado). En silver.assumption pasó a la versión 2 (213–223,65–240 mil t); la v1 (230–240) se conserva | 🆕 | 333 Latinoamérica con datos de ASPE; MAG vía 3tres3 (sep-2024) |
 | 23 | Benchmark Colombia | La OMSA reconoció zonas libres de PPC en 2026 | 🆕 | OMSA (2026) |
 
 ## B. Supuestos (a completar en la Fase 10, con rango mín/base/máx)
