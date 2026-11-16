@@ -98,4 +98,4 @@
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
 
 ## Siguiente paso
-**Fase 7:** modelo gold (estrella Kimball): dim_date, dim_country, dim_product, fact_trade, fact_tariff (arancel aplicado = NMF o preferencial + adicionales por origen y fecha), fact_balance (USDA). Antes: Carlos corre `.alidate.ps1` (migración 004).
+**Fase 7:** modelo gold (estrella Kimball): dim_date, dim_country, dim_product, fact_trade, fact_tariff (arancel aplicado = NMF o preferencial + adicionales por origen y fecha), fact_balance (USDA). Antes: Carlos corre `.\validate.ps1` (migración 004).
