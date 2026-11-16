@@ -2,8 +2,8 @@
 
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
-- **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** FASE 11 CERRADA (API verificada en el PC) → siguiente Fase 12 (tablero en Streamlit con el simulador). Faltan 5 fases (12–16)
+- **Fase:** 12 cerrada (tablero Streamlit)
+- **Paso:** Fase 12 cerrada y fusionada a main. Siguiente: Fase 13 (métodos mixtos). Faltan 4 fases (13–16)
 - **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
@@ -26,6 +26,8 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-16 · 12.1-v · En el PC: setup.ps1 instaló Streamlit; pipeline corrida 41: 10/10 OK, 160 passed en 26,8 s (registro logs/runs leído por Claude); dashboard.ps1 abrió el tablero sin errores. Fusionado a main. FASE 12 CERRADA
+- 2026-11-16 · 12.1 · (rama feat/fase-12-tablero) Tablero Streamlit de 4 páginas en src/dashboard/ (la ventana de China, precio en destino, 24 escenarios, simulador What-If), lectura con pork_bi y caché de 10 min. Dependencia aprobada por Carlos: streamlit 1.67.0 (verificada para Windows/Py 3.14 con pyarrow 26.0.1, sin cambiar pines). Simulador movido a src/simulation.py y compartido por la API y el tablero (sin cambios reproduce el VAN del pipeline). Paleta validada con el skill dataviz (azul/naranja/aqua; rojo↔azul con medio gris para signos). Revisión visual con capturas reales (Chrome por CDP, esperando el websocket de Streamlit): se corrigieron barra de herramientas sobre títulos, miles sin separador, leyendas sobre títulos, métricas cortadas, contraste del texto en el mapa de calor, orden de la leyenda y color semántico de la caída de importaciones. Capturas en docs/img/; docs/dashboard.md; dashboard.ps1. 160/160 pytest
 - 2026-11-16 · 11.1-v · En el PC: setup.ps1 instaló httpx2; pipeline corrida 36: 10/10 OK, 152 passed en 8,1 s sin omitidas (registro logs/runs leído por Claude); api.ps1 abrió /docs. Fusionado a main. FASE 11 CERRADA
 - 2026-11-16 · 11.1 · (rama feat/fase-11-api) API FastAPI en src/api/main.py: /health, /scenarios, /scenarios/{code}, /tariffs, /landed-cost, /market/china-balance y POST /simulate; todo con pork_bi. Migración 014: vistas v_scenario_params y v_last_pipeline_run (SQL SECURITY DEFINER) para no dar a pork_bi permisos sobre silver/bronze (verificado: sigue sin poder leer silver). /simulate reutiliza finance.evaluate(): sin cambios reproduce el VAN del pipeline (Δ = 0). Validación Pydantic → 422; inexistente → 404. Dependencia nueva aprobada por Carlos: httpx2 2.16.2 (Starlette 1.10 ya no usa httpx) para TestClient; requirements actualizado y verificado para Windows/Py 3.14. api.ps1 levanta uvicorn y abre /docs. docs/api.md. Dentro del pipeline /health ve la corrida en curso ('running'): la prueba lo acepta. Booleanos de MySQL (TINYINT) → true/false en el JSON. Servidor uvicorn verificado con curl. 152/152 pytest
 - 2026-11-16 · 10.3-v · pipeline.ps1 en el PC: 10/10 OK en 63 s (migración 013); pruebas 9,2 s con 137 (antes 13–32 s con 100). Fusionado a main. FASE 10 CERRADA
@@ -126,4 +128,4 @@
 - [ ] Otros TLC de China con exportadores menores (Perú, Australia, Nueva Zelanda, Suiza) no modelados: hoy pagan NMF en gold
 
 ## Siguiente paso
-**Fase 12:** tablero en Streamlit con el simulador What-If (lee las vistas v_dash_* con pork_bi y usa la misma lógica de /simulate).
+**Fase 13:** métodos mixtos — guion de entrevista con alguien del sector (prioridad: valor local de la víscera, plazos del protocolo sanitario), mapa sanitario por provincia y benchmark de acceso (Chile, Costa Rica, Brasil).
