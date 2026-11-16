@@ -21,4 +21,4 @@ if ($LASTEXITCODE -ne 0) { Write-Host "`nGold no cuadra con silver; pégale esta
 Write-Host "`n=== Suite de pruebas (pytest) ===" -ForegroundColor Cyan
 & $venvPy -m pytest tests -q -p no:warnings
 if ($LASTEXITCODE -ne 0) { Write-Host "`nAlguna prueba falló; pégale esta salida a Claude." -ForegroundColor Red; exit 1 }
-Write-Host "`nFase 7.1 completa: gold listo para el tablero." -ForegroundColor Green
+Write-Host "`nFase 7 completa: gold listo para el análisis y el tablero." -ForegroundColor Green
