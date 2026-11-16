@@ -16,10 +16,19 @@ pos = int((sc["npv_usd"] > 0).sum())
 cert = sc[sc["cert_year"].notna()]
 delay = (cert.pivot_table(index=["trade_case", "china_selfsuff"], columns="cert_year", values="npv_usd"))
 cost2 = (delay[2] - delay[4]).mean() / 1e6
-st.markdown(
-    f"**{pos} de 24 escenarios tienen VAN positivo**: todos los que logran el protocolo sanitario. Los 6 sin "
-    f"certificación pierden la inversión completa. **Cada dos años de demora en certificar cuestan en promedio "
-    f"{es(cost2, 1)} millones de USD de VAN**: el valor del proyecto está en conseguir el protocolo, y pronto.")
+if pos > 0:
+    st.markdown(
+        f"**{pos} de 24 escenarios tienen VAN positivo**: todos los que logran el protocolo sanitario. Los 6 sin "
+        f"certificación pierden la inversión completa. **Cada dos años de demora en certificar cuestan en promedio "
+        f"{es(cost2, 1)} millones de USD de VAN**: el valor del proyecto está en conseguir el protocolo, y pronto.")
+else:
+    be = cert["breakeven_offal_usd_kg"].astype(float)
+    st.markdown(
+        f"**Ningún escenario tiene VAN positivo** con la víscera valorada en **{es(data.offal_local_value(), 2)} USD/kg** "
+        f"en Ecuador (precios públicos de patas y cuero; supuesto). Exportar solo conviene si ese valor local baja de "
+        f"**{es(be.min(), 2)}–{es(be.max(), 2)} USD/kg** (columna «víscera máx.»): por ejemplo, exportando solo las "
+        f"vísceras que valen poco aquí, o si sumar miles de toneladas hunde el precio interno. Ese es el dato que "
+        f"define el negocio y lo que hay que validar en la entrevista con el sector.")
 
 rows = [("A", "up"), ("A", "down"), ("B", "up"), ("B", "down"), ("C", "up"), ("C", "down")]
 cols = [2, 4, 6, None]

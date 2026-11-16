@@ -61,6 +61,12 @@ def scenarios() -> pd.DataFrame:
         FROM {GOLD}.dim_scenario s JOIN {GOLD}.fact_scenario_result r ON r.scenario_key = s.scenario_key""")
 
 
+def offal_local_value() -> float:
+    """Valor local base de la víscera (USD/kg) que usan los escenarios."""
+    d = query(f"SELECT MAX(value) AS v FROM {GOLD}.v_scenario_params WHERE name = 'offal_local_value_usd_kg'")
+    return float(d["v"].iloc[0])
+
+
 def cashflows() -> pd.DataFrame:
     return query(f"""
         SELECT s.code, c.year_n, c.net_cashflow, c.discounted_cf, c.cumulative_dcf, c.tonnes

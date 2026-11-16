@@ -62,10 +62,13 @@ def test_simulate_without_changes_matches_the_pipeline(client):
 
 
 def test_simulate_moves_npv_in_the_right_direction(client):
-    base = client.post("/simulate", json={"scenario": "B-up-4"}).json()["npv_usd"]
-    worse = client.post("/simulate", json={"scenario": "B-up-4", "offal_local_value_usd_kg": 1.1}).json()["npv_usd"]
-    pricier = client.post("/simulate", json={"scenario": "B-up-4", "capex_factor": 2}).json()["npv_usd"]
-    cheaper_money = client.post("/simulate", json={"scenario": "B-up-4", "discount_rate": 8}).json()["npv_usd"]
+    """Con un valor local de víscera bajo (proyecto rentable), cada palanca mueve el VAN hacia donde debe."""
+    good = {"scenario": "B-up-4", "offal_local_value_usd_kg": 0.6}
+    base = client.post("/simulate", json=good).json()["npv_usd"]
+    worse = client.post("/simulate", json=good | {"offal_local_value_usd_kg": 1.1}).json()["npv_usd"]
+    pricier = client.post("/simulate", json=good | {"capex_factor": 2}).json()["npv_usd"]
+    cheaper_money = client.post("/simulate", json=good | {"discount_rate": 8}).json()["npv_usd"]
+    assert base > 0
     assert worse < base and pricier < base and cheaper_money > base
 
 

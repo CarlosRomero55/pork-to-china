@@ -21,6 +21,13 @@ para exportar vísceras congeladas a China, en 24 escenarios. Varios insumos no 
 6. **Ecuador es tomador de precio:** vende al FOB de Chile (1,60 USD/kg en vísceras, 2025).
 7. Los escenarios sin certificación pierden toda la inversión: el modelo no supone que se recupere.
 
+## Actualización 2026-11-16 (Fase 13.1)
+8. El valor local de la víscera pasa de la v1 sin fuente (base 0,90) a la **v2 con referencias públicas
+   (1,14–1,38–2,20 USD/kg)**: precios de patas y cuero en Ecuador × un factor planta/mercado (supuesto).
+   Carlos decidió usar la base 1,38 y **contar el resultado tal cual: ningún escenario tiene VAN positivo**.
+   La conclusión del proyecto pasa a ser condicional: exportar a China solo conviene si la víscera exportada
+   vale en Ecuador menos de 1,08–1,25 USD/kg (las de menor valor local, o si el volumen extra hunde el precio).
+
 ## Consecuencias
 - (+) Cada número del resultado se puede rastrear a un supuesto versionado con su fuente o su marca de "supuesto".
 - (+) La incertidumbre más grande queda visible en vez de enterrada en un valor elegido.
