@@ -40,6 +40,10 @@
 | 32 | Flete reefer 40' hacia China | Pacífico 3.000–4.500–7.500 · Brasil 3.500–5.500–8.000 · Europa 2.500–4.300–5.600 · Norteamérica 2.000–3.500–5.000 USD/contenedor; carga 20–24–26 t | ⚠️ supuesto con rango | Delpa Group (reefer 40' China–Chile USD 4.500–7.500, 2026); Gerudo Logistics (reefer 40' China–Europa USD 4.300–5.600, jun-2026; 20–24 t por contenedor). Sensibilidad: el orden de proveedores no cambia en el mínimo ni en el máximo |
 | 33 | Seguro de carga | 0,2–0,3–0,5% del CIF | ⚠️ supuesto | Práctica comercial, sin fuente específica; impacto < 0,01 USD/kg |
 | 34 | Precio FOB de Ecuador | Tomador de precio: el FOB de Chile en cada línea (2025: vísceras 020649 1,60 USD/kg; carne 020329 1,35) | ⚠️ supuesto | Consulta q08 (gold, espejo 2025) |
+| 35 | Tendencia de las importaciones chinas (2028+) | −3%/año (autosuficiencia al alza) · 0 · +3%/año (a la baja); 2026–2027 siguen a USDA (índice 0,708 y 0,691 vs 2025) | ⚠️ supuesto | Escenarios; base USDA PSD |
+| 36 | Techo de participación de un recién llegado | 0,2% (A) · 0,3% (B) · 0,5% (C) del SAM | ⚠️ supuesto | Referencia: Chile, con 20 años en China, tiene 3,4% de las vísceras (q04) |
+| 37 | Represalias por caso comercial | Factor sobre los aranceles adicionales: A 0 (se levantan) · B 1 · C 1,5 | ⚠️ supuesto | Escenarios |
+| 38 | Entrada de AgroPorc | 5.000 t/año (rango 3.000–8.000); rampa 40-70-100 desde el año de certificación | ✅ decisión de Carlos (2026-11-16) | — |
 | 30 | Producción de cerdo de Ecuador | 2023: 213 mil t (ASPE) / 216.389 t (MAG); 2024 ≈ 223,7 mil t (ASPE +5%, estimado). En silver.assumption pasó a la versión 2 (213–223,65–240 mil t); la v1 (230–240) se conserva | 🆕 | 333 Latinoamérica con datos de ASPE; MAG vía 3tres3 (sep-2024) |
 | 23 | Benchmark Colombia | La OMSA reconoció zonas libres de PPC en 2026 | 🆕 | OMSA (2026) |
 
