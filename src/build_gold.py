@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from sqlalchemy import text
 
-from src.db import GOLD, SILVER, get_engine, upsert_df
+from src.db import GOLD, SILVER, get_engine, insert_df, upsert_df
 from src.logging_setup import get_logger
 
 log = get_logger(__name__)
@@ -249,19 +249,20 @@ def main() -> int:
             conn.execute(text(f"DELETE FROM {GOLD}.{t}"))
         upsert_df(conn, dim_country, GOLD, "dim_country", ["iso3", "name_es", "supplier_bloc", "exports_pork_to_china"])
         upsert_df(conn, dim_product, GOLD, "dim_product", ["hs_code", "product_group_es", "description_es", "is_sam"])
-        r_imp = upsert_df(conn, imports, GOLD, "fact_china_imports", ["tonnes"])
-        r_tar = upsert_df(conn, tariffs, GOLD, "fact_tariff_applied", ["mfn_pct"])
+        # Hechos: se vaciaron arriba → INSERT simple (vía rápida, sin upsert)
+        n_imp = insert_df(conn, imports, GOLD, "fact_china_imports")
+        n_tar = insert_df(conn, tariffs, GOLD, "fact_tariff_applied")
         upsert_df(conn, scenarios, GOLD, "dim_scenario", ["code", "trade_case", "china_selfsuff", "cert_year", "label_es"])
-        r_bal = upsert_df(conn, balance, GOLD, "fact_market_balance", ["production_kt"])
-        r_prod = upsert_df(conn, production, GOLD, "fact_domestic_production", ["production_t"])
+        n_bal = insert_df(conn, balance, GOLD, "fact_market_balance")
+        n_prod = insert_df(conn, production, GOLD, "fact_domestic_production")
 
         print(f"[1/5] Dimensiones: {len(dim_country)} países · {len(dim_product)} líneas HS "
               f"(SAM: {', '.join(dim_product.loc[dim_product['is_sam'], 'hs_code'])})\n"
               f"      Con acceso real (venden cerdo a China, últimos 24 meses): {int(dim_country['exports_pork_to_china'].sum())} países · "
               f"Ecuador: {'sí' if dim_country.loc[dim_country['iso3'] == 'ECU', 'exports_pork_to_china'].any() else 'no'}")
-        print(f"[2/5] fact_china_imports: {r_imp.inserted:,} filas · fact_tariff_applied: {r_tar.inserted:,} filas "
+        print(f"[2/5] fact_china_imports: {n_imp:,} filas · fact_tariff_applied: {n_tar:,} filas "
               f"({len(months)} meses × {len(origins)} orígenes × {len(pkeys)} líneas)".replace(",", "."))
-        print(f"      fact_market_balance: {r_bal.inserted} filas · fact_domestic_production: {r_prod.inserted} · "
+        print(f"      fact_market_balance: {n_bal} filas · fact_domestic_production: {n_prod} · "
               f"dim_scenario: {len(scenarios)} escenarios")
 
         ok = reconcile(conn)

@@ -198,6 +198,10 @@ def upsert_df(conn: Connection, df: pd.DataFrame, schema: str, table: str,
         update_cols = [c for c in df.columns if c not in key_cols]
 
     records = [{k: _clean(v) for k, v in row.items()} for row in df.to_dict("records")]
+    # Se cuenta UNA vez antes y otra al final. Contar en cada lote hacía el costo cuadrático:
+    # 100 lotes × COUNT(*) de una tabla que crece (12 min en Windows para 100 mil filas).
+    count_sql = text(f"SELECT COUNT(*) FROM `{schema}`.`{table}`")
+    before = conn.execute(count_sql).scalar()
     for start in range(0, len(records), chunk_size):
         chunk = records[start:start + chunk_size]
         stmt = mysql_insert(tbl).values(chunk)
@@ -205,19 +209,32 @@ def upsert_df(conn: Connection, df: pd.DataFrame, schema: str, table: str,
             stmt = stmt.on_duplicate_key_update({c: stmt.inserted[c] for c in update_cols})
         else:
             stmt = stmt.prefix_with("IGNORE")
-        # Para distinguir nuevas de actualizadas se cuenta antes/después
-        before = conn.execute(text(f"SELECT COUNT(*) FROM `{schema}`.`{table}`")).scalar()
         affected = conn.execute(stmt).rowcount
-        after = conn.execute(text(f"SELECT COUNT(*) FROM `{schema}`.`{table}`")).scalar()
-        ins = after - before
         # SQLAlchemy conecta con CLIENT_FOUND_ROWS: MySQL cuenta 1 por fila nueva, 2 por
-        # actualizada y 1 por fila idéntica → affected = len(chunk) + actualizadas.
-        upd = max(affected - len(chunk), 0) if update_cols else 0
-        result.inserted += ins
-        result.updated += upd
-        result.unchanged += len(chunk) - ins - upd
+        # actualizada y 1 por fila idéntica → affected − len(chunk) = actualizadas del lote.
+        result.updated += max(affected - len(chunk), 0) if update_cols else 0
+    result.inserted = conn.execute(count_sql).scalar() - before
+    result.unchanged = len(records) - result.inserted - result.updated
     log.info("Upsert %s.%s · %s", schema, table, result)
     return result
+
+
+def insert_df(conn: Connection, df: pd.DataFrame, schema: str, table: str, chunk_size: int = 5000) -> int:
+    """
+    INSERT simple por lotes, para tablas que se reconstruyen completas (hechos de gold, que se
+    vacían antes). Sin ON DUPLICATE KEY ni conteos: es la vía rápida. Devuelve las filas insertadas.
+    Una fila repetida en el DataFrame hace fallar la carga (la PK lo impide): es lo correcto.
+    """
+    if df.empty:
+        return 0
+    cols = list(df.columns)
+    sql = text(f"INSERT INTO `{schema}`.`{table}` ({', '.join(f'`{c}`' for c in cols)}) "
+               f"VALUES ({', '.join(':' + c for c in cols)})")
+    records = [{k: _clean(v) for k, v in row.items()} for row in df.to_dict("records")]
+    for start in range(0, len(records), chunk_size):
+        conn.execute(sql, records[start:start + chunk_size])   # executemany → INSERT multi-fila
+    log.info("Insert %s.%s · %s filas", schema, table, len(records))
+    return len(records)
 
 
 # ------------------------------------------------------------------ carga incremental
