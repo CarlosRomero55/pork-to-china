@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 4.3 – Fuentes complementarias
-- **Paso:** 4.3c listo (NMF por línea, acuerdo Ecuador–China, producción de Ecuador) → Carlos corre `.\validate.ps1`
+- **Paso:** Fases 4–6 (silver) cerradas y verificadas en el PC → siguiente Fase 7 (gold)
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
 - **Modo de ejecución:** "un comando por fase": Claude escribe y prueba todo el código en su entorno (Python 3.12) y lo copia a `D:\pork-to-china`; Carlos solo ejecuta un script por fase y pega la salida. (El entorno de Claude no llega a Comtrade/USDA/FAO, así que la extracción corre en el PC de Carlos.)
 
@@ -24,6 +24,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-15 · 4.3c-v2 · validate.ps1 en el PC: 10 OK · 2 alertas · 0 errores, 75/75 pytest. Silver cerrado
 - 2026-11-15 · 4.3c-v · validate.ps1 en el PC: migración 004 OK, 10 OK · 2 alertas · 0 errores; falló 1 prueba frágil (ZIP de prueba con fecha actual → huella distinta si cruza un segundo par en equipos lentos). Corregido con fecha fija
 - 2026-11-15 · 4.3c · Migración 004: NMF verificado por línea (congelado 12, fresco 20, 0210 25; corrige el 12% sembrado en 4 líneas frescas y agrega 0210); SCD2 real del 8% provisional 2020–2021 en 020322/020329; medida preferential Ecuador (supuesto lineal 15 años, 0% en 2038); tabla country_production (ASPE 2023 213 mil t, 2024e 223,7; MAG 2023 216.389). 75/75 pytest, R10 OK
 - 2026-11-15 · 4.3b-v · validate.ps1 OK en el PC: migración 003, 2.844 filas USDA, 10 OK · 2 alertas (R08, R12) · 0 errores, 66/66 pytest
@@ -99,4 +100,4 @@
 - [ ] Costa Rica exporta cerdo a China → agregar al benchmark sanitario (Fase 13)
 
 ## Siguiente paso
-**Fase 7:** modelo gold (estrella Kimball): dim_date, dim_country, dim_product, fact_trade, fact_tariff (arancel aplicado = NMF o preferencial + adicionales por origen y fecha), fact_balance (USDA). Antes: Carlos corre `.\validate.ps1` (migración 004).
+**Fase 7:** modelo gold (estrella Kimball): dim_date, dim_country, dim_product, fact_trade, fact_tariff (arancel aplicado = NMF o preferencial + adicionales por origen y fecha), fact_balance (USDA).
