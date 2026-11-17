@@ -37,6 +37,7 @@ def run(page: str):
     ("6_politicas.py", "Rastreador de políticas"),
     ("7_serie_tiempo.py", "Serie de tiempo interrumpida"),
     ("8_monte_carlo.py", "Monte Carlo: ¿qué tan probable es ganar?"),
+    ("9_recomendacion.py", "Recomendación: no invertir hoy"),
 ])
 def test_every_page_loads(page, title):
     assert run(page).title[0].value == title
