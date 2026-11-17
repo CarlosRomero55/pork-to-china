@@ -1,6 +1,6 @@
 # Reporte de calidad de datos · Comtrade y USDA PSD (bronze → silver)
 
-_Generado automáticamente por `src/validate.py` el 2026-11-17 17:43. No editar a mano._
+_Generado automáticamente por `src/validate.py` el 2026-11-17 17:53. No editar a mano._
 
 ## 1. Antes vs después
 

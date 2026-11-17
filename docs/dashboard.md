@@ -12,6 +12,7 @@ el simulador usa `src/simulation.py`, la misma función que la API (`POST /simul
 | 5 · Mapa sanitario | ¿Dónde está el cerdo de Ecuador, qué provincias tienen granjas tecnificadas, qué frena el acceso a China y cuánto tardaron Chile, Costa Rica y Brasil? |
 | 6 · Rastreador de políticas | ¿Qué aranceles, acuerdos, protocolos y cambios sanitarios hubo, y qué pasó con las importaciones de vísceras alrededor de cada uno? |
 | 7 · Serie de tiempo | ¿La guerra comercial cambió la participación de EE. UU. en las vísceras que compra China, más allá de la tendencia y la estacionalidad? |
+| 8 · Monte Carlo | ¿Qué probabilidad hay de que el VAN sea positivo y qué supuesto pesa más? |
 
 ![La ventana de China](img/dashboard_1_ventana.png)
 ![El precio en destino](img/dashboard_2_precio.png)
@@ -20,6 +21,7 @@ el simulador usa `src/simulation.py`, la misma función que la API (`POST /simul
 ![Mapa sanitario](img/dashboard_5_mapa.png)
 ![Rastreador de políticas](img/dashboard_6_politicas.png)
 ![Serie de tiempo](img/dashboard_7_serie_tiempo.png)
+![Monte Carlo](img/dashboard_8_monte_carlo.png)
 
 ## Decisiones de diseño
 - **Cada página abre con su conclusión escrita**; los gráficos la respaldan. Los textos se calculan con los datos

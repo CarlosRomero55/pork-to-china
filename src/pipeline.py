@@ -62,6 +62,7 @@ STAGES: tuple[Stage, ...] = (
     Stage("scenarios", ("-m", "src.scenarios"), "Modelo: mercado por escenario"),
     Stage("finance", ("-m", "src.finance"), "Modelo: flujo de caja, VAN y TIR"),
     Stage("its", ("-m", "src.its"), "Serie de tiempo interrumpida (ITS)"),
+    Stage("monte_carlo", ("-m", "src.monte_carlo"), "Monte Carlo del VAN (10.000 sorteos)"),
     Stage("tests", ("-m", "pytest", "tests", "-q", "-p", "no:warnings"), "Suite de pruebas"),
 )
 

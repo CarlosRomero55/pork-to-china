@@ -121,5 +121,18 @@ def its_coef() -> pd.DataFrame:
     return query(f"SELECT * FROM {GOLD}.fact_its_coef")
 
 
+def mc_summary() -> pd.DataFrame:
+    return query(f"""SELECT m.*, s.code, s.trade_case, s.china_selfsuff, s.cert_year
+                     FROM {GOLD}.fact_mc_summary m JOIN {GOLD}.dim_scenario s USING (scenario_key)""")
+
+
+def mc_hist(key: int) -> pd.DataFrame:
+    return query(f"SELECT * FROM {GOLD}.fact_mc_hist WHERE scenario_key = :k ORDER BY bin", k=key)
+
+
+def mc_tornado(key: int) -> pd.DataFrame:
+    return query(f"SELECT * FROM {GOLD}.fact_mc_tornado WHERE scenario_key = :k ORDER BY swing", k=key)
+
+
 def last_run() -> pd.DataFrame:
     return query(f"SELECT run_id, finished_at, status FROM {GOLD}.v_last_pipeline_run")

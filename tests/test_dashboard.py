@@ -35,6 +35,8 @@ def run(page: str):
     ("4_simulador.py", "Simulador What-If"),
     ("5_mapa.py", "Mapa sanitario: dónde está el cerdo de Ecuador"),
     ("6_politicas.py", "Rastreador de políticas"),
+    ("7_serie_tiempo.py", "Serie de tiempo interrumpida"),
+    ("8_monte_carlo.py", "Monte Carlo: ¿qué tan probable es ganar?"),
 ])
 def test_every_page_loads(page, title):
     assert run(page).title[0].value == title
