@@ -34,6 +34,7 @@ def run(page: str):
     ("3_escenarios.py", "Los 24 escenarios de AgroPorc"),
     ("4_simulador.py", "Simulador What-If"),
     ("5_mapa.py", "Mapa sanitario: dónde está el cerdo de Ecuador"),
+    ("6_politicas.py", "Rastreador de políticas"),
 ])
 def test_every_page_loads(page, title):
     assert run(page).title[0].value == title
