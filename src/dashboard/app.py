@@ -1,8 +1,8 @@
 """
 app.py · Fase 12 · Tablero de Pork to China (Streamlit)
 
-Ocho páginas: la ventana de China, el precio en destino, los escenarios, el simulador What-If, el
-mapa sanitario, el rastreador de políticas, la serie de tiempo interrumpida y el Monte Carlo.
+Nueve páginas: la ventana de China, el precio en destino, los escenarios, el simulador What-If, el
+mapa sanitario, el rastreador de políticas, la serie de tiempo interrumpida, el Monte Carlo y la recomendación.
 Lee pork_gold con el usuario de solo lectura (pork_bi); el simulador usa src/simulation.py, la misma
 función que la API, así el cálculo vive en un solo lugar.
 
@@ -29,6 +29,7 @@ nav = st.navigation([
     st.Page(PAGES / "6_politicas.py", title="6 · Rastreador de políticas"),
     st.Page(PAGES / "7_serie_tiempo.py", title="7 · Serie de tiempo"),
     st.Page(PAGES / "8_monte_carlo.py", title="8 · Monte Carlo"),
+    st.Page(PAGES / "9_recomendacion.py", title="9 · Recomendación"),
 ])
 
 with st.sidebar:

@@ -2,8 +2,8 @@
 
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
-- **Fase:** 14 cerrada (análisis avanzado). Siguiente: Fase 15 – recomendación, policy brief y pre-mortem
-- **Paso:** Fase 14 cerrada y fusionada a main. Faltan 2 fases (15–16)
+- **Fase:** 15 en curso (recomendación, policy brief y pre-mortem)
+- **Paso:** 15.1 cerrado y fusionado a main. Siguiente: 15.2 policy brief (Agrocalidad y Ministerio de Producción) y después la Fase 16
 - **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
@@ -26,6 +26,8 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-17 · 15.1-v · En el PC: corrida 76: 14/14 etapas OK, 202 passed; disparadores idénticos a los del entorno de Claude (D1 1,14 vs 1,38; D2 1,84 vs 1,47). Fusionado a main
+- 2026-11-17 · 15.1 · (rama feat/fase-15-recomendacion) Recomendación "no invertir hoy" + disparadores + pre-mortem. src/recommendation.py (etapa recommendation, 14 etapas) → gold.fact_trigger (migración 022) y docs/triggers.md + docs/premortem.md. 5 disparadores: D1 víscera en planta ≤ 1,14 (VAN 0 en B-up-6; rango 1,08–1,19) hoy 1,38 ⛔; D2 FOB Chile 020649 ≥ 1,84 (1,79–1,91) hoy 1,47 en 12 meses a sep-2026 ⛔ (bajó desde 1,60 en 2025); D3 zona continental libre de PPC ⛔; D4 protocolo GACC ⛔; D5 aftosa sin vacunación ⏳. Regla: una económica Y las dos de acceso. Pre-mortem: 8 causas (juicio del analista), matriz alta-alta = R1 sanitario y R2 víscera. docs/recommendation.md (1 página). Página 9 del tablero (semáforo, brecha de precios, pre-mortem). Supuestos #51–52. tests/test_recommendation.py (12). 202/202 pytest
 - 2026-11-17 · 14.3-v · En el PC: pipeline corrida 66: 13/13 OK, 190 passed en 29,7 s; Monte Carlo idéntico al del entorno de Claude (semilla fija: B-up-4 6,0%, víscera 9,79 M). Fusionado a main. FASE 14 CERRADA
 - 2026-11-17 · 14.3 · (rama feat/fase-14-montecarlo) Monte Carlo. src/monte_carlo.py (etapa monte_carlo, 13 etapas): 10.000 sorteos triangulares de 12 supuestos (víscera, FOB, capacidad, costos, capital de trabajo, 4 inversiones), semilla 2026, números aleatorios comunes en los 24 escenarios; tasa fija 12%; motor de flujo de caja vectorizado en NumPy que reproduce finance.cashflow (diferencia < 1 USD; 2,6 s en total). Migración 021: gold.fact_mc_summary, fact_mc_hist, fact_mc_tornado. Resultado: P(VAN > 0) 1–11% con certificación (mediana 6%; mejor C-down-2 11,3%, peor A-up-6 0,7%), 0% sin certificación; VAN mediano peor que el base (B-up-4: −2,66 vs −1,42 M) por la asimetría del rango de la víscera; tornado: la víscera mueve 9,8 M de VAN (Spearman −0,94), el FOB 2,8 M y el resto < 1 M. Página 8 del tablero, docs/monte_carlo.md, supuesto #50. tests/test_monte_carlo.py (5). 190/190 pytest
 - 2026-11-17 · 14.2-v · En el PC: pipeline corrida 61: 12/12 OK, 183 passed en 38,5 s; la ITS da los mismos resultados que en el entorno de Claude (−9,6 pp y +10,2 pp); conciliación de EE. UU. sin diferencias. Fusionado a main

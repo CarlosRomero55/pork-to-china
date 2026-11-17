@@ -136,3 +136,7 @@ def mc_tornado(key: int) -> pd.DataFrame:
 
 def last_run() -> pd.DataFrame:
     return query(f"SELECT run_id, finished_at, status FROM {GOLD}.v_last_pipeline_run")
+
+
+def triggers() -> pd.DataFrame:
+    return query(f"SELECT * FROM {GOLD}.fact_trigger ORDER BY sort_order")
