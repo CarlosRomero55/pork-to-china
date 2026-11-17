@@ -99,5 +99,19 @@ def access_benchmark() -> pd.DataFrame:
     return query(f"SELECT * FROM {GOLD}.v_dash_access_benchmark ORDER BY FIELD(iso3, 'CHL', 'CRI', 'BRA', 'ECU')")
 
 
+def policy_events() -> pd.DataFrame:
+    return query(f"SELECT * FROM {GOLD}.v_dash_policy_events ORDER BY event_date")
+
+
+def offal_monthly_us_vs_rest() -> pd.DataFrame:
+    """Importaciones chinas de vísceras por mes (datos espejo): EE. UU. frente al resto de proveedores."""
+    return query(f"""
+        SELECT date, CASE WHEN iso3 = 'USA' THEN 'EE. UU.' ELSE 'Resto de proveedores' END AS who,
+               SUM(tonnes) AS tonnes, MIN(month_is_complete) AS complete
+        FROM {GOLD}.v_dash_supplier_monthly
+        WHERE product_group = 'Vísceras'
+        GROUP BY date, who ORDER BY date""")
+
+
 def last_run() -> pd.DataFrame:
     return query(f"SELECT run_id, finished_at, status FROM {GOLD}.v_last_pipeline_run")
