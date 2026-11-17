@@ -113,5 +113,13 @@ def offal_monthly_us_vs_rest() -> pd.DataFrame:
         GROUP BY date, who ORDER BY date""")
 
 
+def its_series(model: str) -> pd.DataFrame:
+    return query(f"SELECT * FROM {GOLD}.fact_its_series WHERE model = :m ORDER BY date", m=model)
+
+
+def its_coef() -> pd.DataFrame:
+    return query(f"SELECT * FROM {GOLD}.fact_its_coef")
+
+
 def last_run() -> pd.DataFrame:
     return query(f"SELECT run_id, finished_at, status FROM {GOLD}.v_last_pipeline_run")

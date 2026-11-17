@@ -11,6 +11,7 @@ el simulador usa `src/simulation.py`, la misma función que la API (`POST /simul
 | 4 · Simulador What-If | ¿Qué pasa con el VAN si cambian la víscera, el precio, la tasa, la capacidad o la inversión? |
 | 5 · Mapa sanitario | ¿Dónde está el cerdo de Ecuador, qué provincias tienen granjas tecnificadas, qué frena el acceso a China y cuánto tardaron Chile, Costa Rica y Brasil? |
 | 6 · Rastreador de políticas | ¿Qué aranceles, acuerdos, protocolos y cambios sanitarios hubo, y qué pasó con las importaciones de vísceras alrededor de cada uno? |
+| 7 · Serie de tiempo | ¿La guerra comercial cambió la participación de EE. UU. en las vísceras que compra China, más allá de la tendencia y la estacionalidad? |
 
 ![La ventana de China](img/dashboard_1_ventana.png)
 ![El precio en destino](img/dashboard_2_precio.png)
@@ -18,6 +19,7 @@ el simulador usa `src/simulation.py`, la misma función que la API (`POST /simul
 ![Simulador What-If](img/dashboard_4_simulador.png)
 ![Mapa sanitario](img/dashboard_5_mapa.png)
 ![Rastreador de políticas](img/dashboard_6_politicas.png)
+![Serie de tiempo](img/dashboard_7_serie_tiempo.png)
 
 ## Decisiones de diseño
 - **Cada página abre con su conclusión escrita**; los gráficos la respaldan. Los textos se calculan con los datos
