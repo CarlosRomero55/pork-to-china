@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 from sqlalchemy import text
 
+from src.config import settings
 from src.db import GOLD, SILVER, get_engine, insert_df, upsert_df
 from src.logging_setup import get_logger
 
@@ -31,8 +32,10 @@ GROUP_ES = {"meat": "Carne", "offal": "Vísceras", "processed": "Procesado"}
 BLOC_BY_ISO3 = {"USA": "EE. UU.", "BRA": "Brasil", "CAN": "Canadá", "GBR": "Reino Unido",
                 "CHL": "Chile", "ECU": "Ecuador"}
 NOT_ORIGINS = {"CHN", "W00"}          # China no se exporta a sí misma; "Mundo" no es un origen
-# Prueba de negocio: arancel total de China al cerdo de EE. UU. (020649), ya verificado (supuesto #7)
-US_CHECKS = {20250101: 37, 20250401: 172, 20250701: 57, 20251101: 47}
+# Prueba de negocio: arancel total de China al cerdo de EE. UU. (020649), ya verificado (supuestos #7 y #47).
+# 2018-08 y 2020-02: NMF 12% + 232 + 301 = 62%; desde mar-2020 se supone la exclusión de la 301 → 37%.
+# (El NMF provisional de 8% de 2020-21 fue para la carne congelada 0203, no para las vísceras 020649.)
+US_CHECKS = {20180801: 62, 20200201: 62, 20200601: 37, 20250101: 37, 20250401: 172, 20250701: 57, 20251101: 47}
 
 
 # ---------------------------------------------------------------- dimensiones
@@ -121,6 +124,8 @@ def mirror_coverage(imports: pd.DataFrame, iso_by_key: dict, min_share: float = 
 
 
 def read_flows(conn) -> pd.DataFrame:
+    """Flujos de silver desde el inicio del modelo (START_YEAR, 2018). Los años anteriores (2015-2017) están en
+    silver solo para la serie de tiempo interrumpida (src/its.py) y no entran a gold."""
     return pd.read_sql(text(f"""
         SELECT f.period AS date, f.partner_id AS supplier_id, f.hs_code, 'direct' AS basis,
                f.net_weight_kg, f.value_usd, f.quality_flag
@@ -128,13 +133,14 @@ def read_flows(conn) -> pd.DataFrame:
         JOIN {SILVER}.source s ON s.source_id = f.source_id AND s.name = 'comtrade'
         JOIN {SILVER}.country r ON r.country_id = f.reporter_id AND r.iso3 = 'CHN'
         JOIN {SILVER}.country p ON p.country_id = f.partner_id AND p.iso3 <> 'W00'
-        WHERE f.flow_type = 'M'
+        WHERE f.flow_type = 'M' AND f.period >= :model_start
         UNION ALL
         SELECT f.period, f.reporter_id, f.hs_code, 'mirror', f.net_weight_kg, f.value_usd, f.quality_flag
         FROM {SILVER}.trade_flow f
         JOIN {SILVER}.source s ON s.source_id = f.source_id AND s.name = 'comtrade_mirror'
         JOIN {SILVER}.country p ON p.country_id = f.partner_id AND p.iso3 = 'CHN'
-        WHERE f.flow_type = 'X'"""), conn)
+        WHERE f.flow_type = 'X' AND f.period >= :model_start"""), conn,
+        params={"model_start": f"{settings.start_year}-01-01"})
 
 
 # ---------------------------------------------------------------- arancel aplicado

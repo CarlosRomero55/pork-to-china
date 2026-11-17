@@ -103,11 +103,14 @@ class Query:
         return p
 
 
-def build_plan(start_year: int, end_year: int, refresh: bool = False) -> tuple[list[Query], list[Query]]:
-    """Devuelve (consultas a la API, consultas servidas desde caché)."""
+def build_plan(start_year: int, end_year: int, refresh: bool = False,
+               groups: set[str] | None = None) -> tuple[list[Query], list[Query]]:
+    """Devuelve (consultas a la API, consultas servidas desde caché). `groups` limita a CHN/ECU/MIRROR."""
     to_fetch, from_cache = [], []
     closed_until = end_year - REVISION_WINDOW_YEARS
     for label, reporters, flow, partner in QUERY_GROUPS:
+        if groups and label not in groups:
+            continue
         for year in range(start_year, end_year + 1):
             q = Query(label, tuple(reporters), flow, partner, year)
             if not refresh and year <= closed_until and q.cache_file.exists():
@@ -194,8 +197,8 @@ def availability_report(session: requests.Session, api_key: str, conn, batch_id:
 # ---------------------------------------------------------------- ejecución
 def run(start_year: int, end_year: int, refresh: bool = False, dry_run: bool = False,
         session: requests.Session | None = None, pause: float = PAUSE_SECONDS,
-        check_availability: bool = True) -> dict:
-    to_fetch, from_cache = build_plan(start_year, end_year, refresh)
+        check_availability: bool = True, groups: set[str] | None = None) -> dict:
+    to_fetch, from_cache = build_plan(start_year, end_year, refresh, groups)
     n_da = 2 if check_availability else 0
     print(f"Plan Comtrade {start_year}–{end_year}: {len(to_fetch)} consultas de datos + {n_da} de "
           f"disponibilidad · {len(from_cache)} servidas desde caché")
@@ -258,10 +261,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--refresh", action="store_true", help="ignora la caché y pide todo de nuevo")
     p.add_argument("--dry-run", action="store_true", help="solo muestra el plan")
     p.add_argument("--no-availability", action="store_true", help="omite la consulta de disponibilidad")
+    p.add_argument("--groups", default="", help="solo estos grupos, separados por coma: CHN,ECU,MIRROR")
     a = p.parse_args(argv)
+    groups = {g.strip().upper() for g in a.groups.split(",") if g.strip()} or None
     print("=== Pork to China · Fase 4 · extracción UN Comtrade ===\n")
     run(a.start_year, a.end_year, refresh=a.refresh, dry_run=a.dry_run,
-        check_availability=not a.no_availability)
+        check_availability=not a.no_availability, groups=groups)
     return 0
 
 

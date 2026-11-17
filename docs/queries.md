@@ -1,6 +1,6 @@
 # Consultas SQL de negocio
 
-Generado por `src/run_queries.py` el 2026-11-16 con el usuario de solo lectura `pork_bi` sobre `pork_gold`. Cada consulta está en `sql/queries/`.
+Generado por `src/run_queries.py` el 2026-11-17 con el usuario de solo lectura `pork_bi` sobre `pork_gold`. Cada consulta está en `sql/queries/`.
 
 ## q01_trade_diversion
 
@@ -268,9 +268,9 @@ Generado por `src/run_queries.py` el 2026-11-16 con el usuario de solo lectura `
 
 | año | arancel_carne | arancel_visceras | cambio_visceras_pp | toneladas |
 |---|---|---|---|---|
-| 2018 | 13,1 | 13,4 | — | 2.030.816 |
-| 2019 | 15,8 | 15,8 | 2,4 | 3.405.046 |
-| 2020 | 12,4 | 15,9 | 0,1 | 5.451.785 |
+| 2018 | 13,9 | 14,1 | — | 2.030.816 |
+| 2019 | 19,9 | 19,6 | 5,5 | 3.405.046 |
+| 2020 | 13,3 | 15,9 | -3,7 | 5.451.785 |
 | 2021 | 11,1 | 18,2 | 2,3 | 4.171.585 |
 | 2022 | 14,4 | 19,3 | 1,1 | 2.844.511 |
 | 2023 | 14,3 | 18,8 | -0,5 | 2.466.459 |
