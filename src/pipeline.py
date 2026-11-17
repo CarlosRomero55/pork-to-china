@@ -54,6 +54,7 @@ STAGES: tuple[Stage, ...] = (
     Stage("extract_psd", ("-m", "src.extract_psd"), "Extracción USDA PSD → bronze", extract=True),
     Stage("silver_comtrade", ("-m", "src.harmonize"), "Comtrade: bronze → silver"),
     Stage("silver_psd", ("-m", "src.harmonize_psd"), "USDA PSD: bronze → silver"),
+    Stage("silver_espac", ("-m", "src.load_espac"), "INEC ESPAC → silver (provincias)"),
     Stage("validate", ("-m", "src.validate"), "Validación de calidad (12 reglas)"),
     Stage("gold", ("-m", "src.build_gold"), "Silver → gold (esquema estrella)"),
     Stage("queries", ("-m", "src.run_queries"), "Consultas de negocio → docs/queries.md"),

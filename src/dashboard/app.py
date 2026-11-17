@@ -1,7 +1,8 @@
 """
 app.py · Fase 12 · Tablero de Pork to China (Streamlit)
 
-Cuatro páginas: la ventana de China, el precio en destino, los escenarios y el simulador What-If.
+Cinco páginas: la ventana de China, el precio en destino, los escenarios, el simulador What-If y el
+mapa sanitario por provincia.
 Lee pork_gold con el usuario de solo lectura (pork_bi); el simulador usa src/simulation.py, la misma
 función que la API, así el cálculo vive en un solo lugar.
 
@@ -24,6 +25,7 @@ nav = st.navigation([
     st.Page(PAGES / "2_precio.py", title="2 · El precio en destino"),
     st.Page(PAGES / "3_escenarios.py", title="3 · Los 24 escenarios"),
     st.Page(PAGES / "4_simulador.py", title="4 · Simulador What-If"),
+    st.Page(PAGES / "5_mapa.py", title="5 · Mapa sanitario"),
 ])
 
 with st.sidebar:

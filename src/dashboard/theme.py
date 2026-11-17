@@ -20,6 +20,11 @@ CONTEXT = "#b9b8b2"                                   # gris de contexto (no es 
 # Sin barra de herramientas de Plotly: se montaba sobre los títulos. El zoom sigue con la rueda/doble clic.
 CHART_CONFIG = {"displayModeBar": False}
 DIVERGING = [[0.0, "#c4312f"], [0.5, "#f0efec"], [1.0, "#1c5cab"]]   # rojo ↔ gris ↔ azul
+# Secuencial de un solo tono (azul, claro → oscuro) para magnitudes: mapas coropléticos
+SEQUENTIAL = [[0.0, "#cde2fb"], [0.35, "#6da7ec"], [0.7, "#256abf"], [1.0, "#104281"]]
+# Estados (fijos, nunca son una serie): siempre con ícono + etiqueta, nunca solo el color
+STATUS = {"favorable": ("#0ca30c", "✅", "Favorable"), "en camino": ("#fab219", "⏳", "En camino"),
+          "bloquea": ("#d03b3b", "⛔", "Bloquea el acceso")}
 
 
 def style(fig: go.Figure, height: int = 360, legend: bool = False) -> go.Figure:
