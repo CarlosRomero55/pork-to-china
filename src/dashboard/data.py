@@ -95,5 +95,9 @@ def sanitary() -> pd.DataFrame:
     return query(f"SELECT * FROM {GOLD}.v_dash_sanitary ORDER BY FIELD(china_risk, 'bloquea', 'en camino', 'favorable')")
 
 
+def access_benchmark() -> pd.DataFrame:
+    return query(f"SELECT * FROM {GOLD}.v_dash_access_benchmark ORDER BY FIELD(iso3, 'CHL', 'CRI', 'BRA', 'ECU')")
+
+
 def last_run() -> pd.DataFrame:
     return query(f"SELECT run_id, finished_at, status FROM {GOLD}.v_last_pipeline_run")

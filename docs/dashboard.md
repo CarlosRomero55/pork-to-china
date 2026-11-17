@@ -9,7 +9,7 @@ el simulador usa `src/simulation.py`, la misma función que la API (`POST /simul
 | 2 · El precio en destino | ¿Cuánto le cuesta a un importador chino 1 kg según su origen? |
 | 3 · Los 24 escenarios | ¿En qué escenarios conviene invertir y cuánto cuesta demorar la certificación? |
 | 4 · Simulador What-If | ¿Qué pasa con el VAN si cambian la víscera, el precio, la tasa, la capacidad o la inversión? |
-| 5 · Mapa sanitario | ¿Dónde está el cerdo de Ecuador, qué provincias tienen granjas tecnificadas y qué frena el acceso a China? |
+| 5 · Mapa sanitario | ¿Dónde está el cerdo de Ecuador, qué provincias tienen granjas tecnificadas, qué frena el acceso a China y cuánto tardaron Chile, Costa Rica y Brasil? |
 
 ![La ventana de China](img/dashboard_1_ventana.png)
 ![El precio en destino](img/dashboard_2_precio.png)

@@ -35,8 +35,8 @@ st.markdown(
     f"Las 5 provincias con más cerdos suman el **{es(top.head(5)['share_year_pct'].sum(), 0)}%** del país "
     f"(INEC, ESPAC {year}). Las que combinan **volumen y granjas tecnificadas** (≥{es(BIG_SHARE)}% de los cerdos y "
     f"≥{es(HIGH_BREED)}% de raza) son **{', '.join(cands['province_name'])}**: ahí podría estar una planta como "
-    f"AgroPorc. Pero el freno no es provincial: **la peste porcina clásica está en todo el país** y ninguna zona "
-    f"está reconocida como libre.")
+    f"AgroPorc. Pero el freno no es provincial: **la peste porcina clásica está en todo el continente**; la OMSA "
+    f"solo reconoce como libre a Galápagos.")
 
 left, right = st.columns([3, 2])
 with left:
@@ -100,6 +100,42 @@ fig.update_layout(title="Participación en los cerdos del país vs. porcentaje d
 fig.update_xaxes(title="% de los cerdos al año del país", ticksuffix="%", rangemode="tozero")
 fig.update_yaxes(title="% de cerdos de raza", ticksuffix="%", range=[0, 105])
 st.plotly_chart(style(fig, height=420, legend=True), width="stretch", config=CHART_CONFIG)
+
+st.subheader("¿Cómo entraron los que ya exportan cerdo a China?")
+bm = data.access_benchmark()
+done = bm[bm["first_export"].notna()]
+yrs = done["years_to_first_export"].dropna()
+st.markdown(
+    f"Chile, Costa Rica y Brasil **ya eran libres de peste porcina clásica** (todo el país o una zona) cuando China "
+    f"abrió el mercado. Costa Rica y Brasil tardaron **unos {es(yrs.mean(), 0)} años** desde el inicio del proceso "
+    f"hasta el primer envío; Brasil entró **solo con sus zonas libres**. Para Ecuador, que aún vacuna contra la PPC "
+    f"en el continente, certificar en 2 o 4 años parece poco realista: los escenarios creíbles son el año 6 o nunca.")
+fig = go.Figure()
+order = list(bm["country_es"])
+for r in done.itertuples():
+    start = r.process_start if r.process_start == r.process_start and r.process_start else r.market_open
+    fig.add_scatter(x=[start, r.first_export], y=[r.country_es] * 2, mode="lines+markers", showlegend=False,
+                    line=dict(color=SERIES[0], width=2), marker=dict(size=10, color=SERIES[0], line=dict(color=SURFACE, width=2)),
+                    hovertemplate=f"<b>{r.country_es}</b><br>%{{x}}<extra></extra>")
+    label = f"{int(r.years_to_first_export)} años" if r.years_to_first_export == r.years_to_first_export else "apertura y primer envío"
+    fig.add_annotation(x=r.first_export, y=r.country_es, text=label, showarrow=False, xanchor="left", xshift=10,
+                       font=dict(color=INK, size=12))
+ecu = bm[bm["iso3"] == "ECU"].iloc[0]
+# Proyección (supuesto): si Ecuador iniciara hoy y tardara lo mismo que Costa Rica y Brasil
+start_ecu, proj = 2026, 2026 + int(round(yrs.mean()))
+fig.add_scatter(x=[start_ecu, proj], y=[ecu.country_es] * 2, mode="lines+markers", showlegend=False,
+                line=dict(color=CONTEXT, width=2, dash="dot"), marker=dict(size=10, color=CONTEXT, line=dict(color=SURFACE, width=2)),
+                hovertemplate="Ecuador (supuesto): inicio %{x}<extra></extra>")
+fig.add_annotation(x=start_ecu, y=ecu.country_es, showarrow=False, xanchor="right", xshift=-10,
+                   text=f"sin protocolo · si empieza hoy: ~{proj} (supuesto: {int(round(yrs.mean()))} años)",
+                   font=dict(color=INK, size=12))
+fig.update_layout(title="Del inicio del proceso sanitario al primer envío de cerdo a China")
+fig.update_xaxes(dtick=2, range=[2003, 2036], showgrid=True, gridcolor="#e6e5e1")
+fig.update_yaxes(categoryorder="array", categoryarray=order[::-1], showgrid=False)
+st.plotly_chart(style(fig, height=300), width="stretch", config=CHART_CONFIG)
+st.dataframe(bm[["country_es", "csf_status_es", "fmd_status_es", "offal_access_es", "lesson_es"]].rename(columns={
+    "country_es": "País", "csf_status_es": "Peste porcina clásica", "fmd_status_es": "Fiebre aftosa",
+    "offal_access_es": "Vísceras", "lesson_es": "Lección"}), hide_index=True)
 
 with st.expander("Ver las 23 provincias"):
     st.dataframe(top[["province_name", "region", "pigs_per_year", "share_year_pct", "stock_head", "breed_pct",
