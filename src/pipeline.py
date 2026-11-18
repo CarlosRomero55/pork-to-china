@@ -2,7 +2,7 @@
 pipeline.py · Fase 8 · Orquestación de punta a punta
 
 Corre las etapas en orden y se detiene en la primera que falla:
-    migraciones → [extracción] → silver Comtrade → silver USDA → validación → gold → consultas → costo puesto en China → escenarios → VAN/TIR → ITS → Monte Carlo → disparadores → pruebas
+    migraciones → [extracción] → silver Comtrade → silver USDA → validación → gold → consultas → costo puesto en China → escenarios → VAN/TIR → ITS → Monte Carlo → disparadores → policy brief → pruebas
 
 - Cada etapa corre como subproceso aislado (`python -m src.<módulo>`): un error en una etapa
   no deja estado a medias en las demás, y su código de salida decide si se continúa.
@@ -64,6 +64,7 @@ STAGES: tuple[Stage, ...] = (
     Stage("its", ("-m", "src.its"), "Serie de tiempo interrumpida (ITS)"),
     Stage("monte_carlo", ("-m", "src.monte_carlo"), "Monte Carlo del VAN (10.000 sorteos)"),
     Stage("recommendation", ("-m", "src.recommendation"), "Disparadores de la recomendación"),
+    Stage("policy_brief", ("-m", "src.policy_brief"), "Policy brief (Markdown + PDF de 2 páginas)"),
     Stage("tests", ("-m", "pytest", "tests", "-q", "-p", "no:warnings"), "Suite de pruebas"),
 )
 

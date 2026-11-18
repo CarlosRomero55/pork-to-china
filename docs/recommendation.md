@@ -14,6 +14,10 @@ La guerra comercial sí abrió un espacio (Estados Unidos perdió participación
 
 Además, la serie de tiempo interrumpida muestra que la ventana es reversible: en 2018 Estados Unidos perdió 9,6 puntos de participación tras los aranceles, pero recuperó 10,2 puntos en 2020 cuando llegaron las exclusiones (`docs/its.md`).
 
+## ¿Y si vendemos más volumen?
+
+China compra mucho (1,04 millones de toneladas de vísceras 020649 en 2025), pero el volumen no salva el negocio porque hoy **cada kilo exportado deja margen negativo**: China paga 1,47 USD/kg, la víscera vale 1,38 en Ecuador y procesarla, congelarla y llevarla a puerto cuesta 0,25 → −0,16 USD por kilo. Con margen negativo, más toneladas son más pérdida: en el escenario B-up-6 el VAN pasa de −1,82 M USD con 5.000 t/año a −1,94 M con 50.000 t/año (y además el modelo limita a Ecuador a unas 2.900–3.800 t/año, porque sería un proveedor pequeño y tomador de precio). El volumen empieza a multiplicar ganancias solo cuando el margen por kilo es positivo: víscera por debajo de ~1,22 USD/kg en planta o FOB por encima de ~1,63 con la víscera a 1,38. Como el dólar es la moneda de Ecuador y China paga en dólares, tampoco hay ganancia cambiaria.
+
 ## Disparadores: cuándo revisar la decisión
 
 Se revisa la inversión cuando se cumple **una** condición económica **y las dos** de acceso. Los umbrales económicos salen del modelo (VAN = 0 en el escenario B-up-6: caso comercial central, autosuficiencia china al alza, certificación en el año 6), no de una opinión.
