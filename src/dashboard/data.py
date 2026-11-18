@@ -1,8 +1,8 @@
 """
 data.py · Capa de datos del tablero
 
-Todo se lee de pork_gold con el usuario de SOLO LECTURA (pork_bi), casi siempre de las vistas v_dash_*
-y de las tablas de resultados. Las consultas se guardan en caché 10 minutos (st.cache_data): el tablero
+Todo se lee de pork_gold, casi siempre de las vistas v_dash_* y de las tablas de resultados: en tu PC desde
+MySQL con el usuario de SOLO LECTURA (pork_bi), y en la web desde la copia en Parquet (src/gold_source.py). Las consultas se guardan en caché 10 minutos (st.cache_data): el tablero
 no vuelve a la base en cada clic.
 """
 from __future__ import annotations
@@ -16,22 +16,16 @@ if str(ROOT) not in sys.path:               # Streamlit corre el archivo como sc
 
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
-from sqlalchemy import text  # noqa: E402
 
-from src.db import get_engine  # noqa: E402
+from src import gold_source  # noqa: E402
 
 GOLD = "pork_gold"
 
 
-@st.cache_resource
-def engine():
-    return get_engine("bi")
-
-
 @st.cache_data(ttl=600, show_spinner=False)
 def query(sql: str, **params) -> pd.DataFrame:
-    with engine().connect() as c:
-        df = pd.read_sql(text(sql), c, params=params)
+    # MySQL en tu PC o la copia en Parquet en la web: mismas consultas (ver src/gold_source.py)
+    df = gold_source.read(sql, **params)
     # MySQL devuelve DECIMAL como objetos Decimal: se pasan a float para graficar
     for col in df.columns:
         if df[col].dtype == object and len(df) and df[col].map(lambda v: hasattr(v, "as_tuple")).any():
@@ -92,11 +86,14 @@ def province_pigs() -> pd.DataFrame:
 
 
 def sanitary() -> pd.DataFrame:
-    return query(f"SELECT * FROM {GOLD}.v_dash_sanitary ORDER BY FIELD(china_risk, 'bloquea', 'en camino', 'favorable')")
+    # Orden con CASE (no la función exclusiva de MySQL): funciona igual en MySQL y en DuckDB
+    return query(f"""SELECT * FROM {GOLD}.v_dash_sanitary
+                     ORDER BY CASE china_risk WHEN 'bloquea' THEN 1 WHEN 'en camino' THEN 2 WHEN 'favorable' THEN 3 ELSE 4 END""")
 
 
 def access_benchmark() -> pd.DataFrame:
-    return query(f"SELECT * FROM {GOLD}.v_dash_access_benchmark ORDER BY FIELD(iso3, 'CHL', 'CRI', 'BRA', 'ECU')")
+    return query(f"""SELECT * FROM {GOLD}.v_dash_access_benchmark
+                     ORDER BY CASE iso3 WHEN 'CHL' THEN 1 WHEN 'CRI' THEN 2 WHEN 'BRA' THEN 3 WHEN 'ECU' THEN 4 ELSE 5 END""")
 
 
 def policy_events() -> pd.DataFrame:
@@ -140,3 +137,12 @@ def last_run() -> pd.DataFrame:
 
 def triggers() -> pd.DataFrame:
     return query(f"SELECT * FROM {GOLD}.fact_trigger ORDER BY sort_order")
+
+
+def data_mode() -> str:
+    """'mysql' (tu PC) o 'snapshot' (copia pública en la web)."""
+    return gold_source.mode()
+
+
+def snapshot_info() -> dict:
+    return gold_source.manifest()

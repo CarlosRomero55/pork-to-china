@@ -35,6 +35,10 @@ httpx2==2.16.2
 matplotlib==3.11.2
 plotly==7.1.0
 streamlit==1.67.0
+
+# --- Tablero en línea (Streamlit Community Cloud): lee la copia en Parquet sin MySQL ---
+duckdb==2.0.0                   # consulta los Parquet con el mismo SQL del tablero
+pyarrow==26.0.1                 # lee y escribe Parquet (pandas.to_parquet)
 ipykernel==7.4.0
 
 # Capa 2 (mapa sanitario) se agregará luego en requirements-geo.txt: geopandas, folium

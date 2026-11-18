@@ -42,6 +42,10 @@ with st.sidebar:
         if len(run):
             st.caption(f"Última corrida del pipeline: n.º {int(run.run_id[0])} · {run.status[0]} · "
                        f"{run.finished_at[0]:%Y-%m-%d %H:%M}" if run.finished_at[0] is not None else "en curso")
+        if data.data_mode() == "snapshot":       # versión publicada: lee la copia en Parquet, no MySQL
+            fecha = str(data.snapshot_info().get("exported_at", ""))[:10]
+            st.caption(f"Versión en línea: copia de los datos exportada el {fecha}. "
+                       "Código y pipeline completos en github.com/CarlosRomero55/pork-to-china.")
     except Exception as e:                       # sin base de datos el tablero lo dice en vez de caerse
         st.error(f"No hay conexión con la base de datos ({type(e).__name__}). Corre .\\pipeline.ps1 y revisa el .env")
 

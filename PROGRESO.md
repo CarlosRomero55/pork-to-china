@@ -90,6 +90,7 @@
 - 2026-11-13 · 2.2b · db_setup corregido: acepta root sin contraseña, valida root antes de pedir las contraseñas nuevas (3 intentos)
 - 2026-11-13 · 2.2 · SQL 01_bronze/02_silver/03_gold + seed + src/db_setup.py + tests/test_schema.py; probado en MySQL 8.0.46: 29 tablas/vistas, 90 medidas SCD2 sin solapes, arancel EE. UU. reconstruido 37/172/57/47%, 6/6 pytest, idempotente
 - 2026-11-13 · 1.1b · Corrección: el PC tiene Py 3.14 → pandas 2.2.3 no tenía wheel y pip intentaba compilar. Se actualizaron las versiones (pandas 2.3.3, etc.), verificadas con wheels para Windows en Py 3.12 y 3.14; setup.ps1 ahora se detiene ante errores y usa --only-binary
+- 2026-11-18 · 16.3b · Tablero en línea: copia pública de gold en Parquet (`.\snapshot.ps1`), modo sin MySQL con DuckDB y las mismas consultas (`src/gold_source.py`), prueba `tests/test_snapshot.py` y guía para Streamlit Community Cloud → `docs/tablero_en_linea.md`
 
 ## Decisiones tomadas
 | Fecha | Decisión | ADR |
