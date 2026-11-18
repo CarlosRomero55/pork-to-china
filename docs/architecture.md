@@ -6,14 +6,14 @@
 |---|---|---|---|
 | Base única sin capas | Se limpia la tabla al cargarla y se sobrescribe | Simple | Se pierde el crudo; no se puede reconstruir el análisis en una fecha pasada |
 | Inmon | Data warehouse corporativo en 3FN + data marts | Una sola verdad | Lento de consultar para BI → **lo tomamos para silver** |
-| Kimball | Esquema estrella | Rápido para Power BI | Sin capa limpia, la lógica se repite → **lo tomamos para gold** |
+| Kimball | Esquema estrella | Rápido para BI | Sin capa limpia, la lógica se repite → **lo tomamos para gold** |
 | **Medallion (elegida)** | bronze → silver (3FN) → gold (estrella) | Trazable y reprocesable | Más tablas; se acepta por la auditoría |
 | Lakehouse (Fabric / Databricks) | Medallion sobre Delta/Parquet con Spark | Escala a terabytes | Excesivo para el volumen; el diseño migra 1:1 |
 | Lambda / Kappa | Batch + streaming / solo streaming | Tiempo real | Los datos son mensuales; no aporta |
 | ETL vs ELT | Transformar antes o después de cargar | ELT conserva el crudo | Híbrido: EL a bronze + T en Python hacia silver/gold |
 
 ### Migración a Microsoft Fabric
-bronze → Lakehouse *Files*; silver/gold → tablas Delta; `src/*.py` → notebooks PySpark; `pipeline.py` → Data Factory; Power BI → Direct Lake (si se agrega un dashboard de Power BI complementario).
+bronze → Lakehouse *Files*; silver/gold → tablas Delta; `src/*.py` → notebooks PySpark; `pipeline.py` → Data Factory; el tablero de Streamlit → informe de Power BI en Direct Lake, si algún día se necesita.
 
 ## Diagrama de punta a punta
 
