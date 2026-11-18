@@ -2,8 +2,8 @@
 
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
-- **Fase:** 15 cerrada (recomendación, pre-mortem y policy brief). Siguiente: Fase 16 – README, posts y video para LinkedIn, scrollytelling
-- **Paso:** Fase 15 cerrada y fusionada a main. Falta 1 fase (16)
+- **Fase:** 16 en curso (cierre y difusión). Orden acordado (Carlos, 2026-11-17): 16.1 README → 16.2 posts de LinkedIn → 16.3 scrollytelling en su portafolio web → 16.4 video animado AL FINAL, solo cuando Carlos lo pida
+- **Paso:** 16.1 escrito y probado en el entorno de Claude (rama feat/fase-16-readme); falta la corrida en el PC
 - **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
@@ -26,6 +26,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-17 · 16.1 · (rama feat/fase-16-readme) Decisiones de la Fase 16: README en inglés + resumen en español; scrollytelling dentro del portafolio web; video al final, cuando Carlos lo pida. README final: respuesta corta, 4 hallazgos con cifras, galería de las 9 páginas, diagrama de arquitectura (Mermaid), pipeline de 15 etapas, métodos, cómo correrlo, estructura, limitaciones. Power BI quitado del stack (no hay informe; ADR-007). tests/test_readme.py (3): cifras clave del README = gold y enlaces existen. 210/210 pytest
 - 2026-11-17 · 15.2-v · En el PC: corrida 81: 15/15 etapas OK, 207 passed; brief de 2 páginas con las mismas cifras (margen −0,16; 24 de 24 VAN negativos). Fusionado a main. FASE 15 CERRADA
 - 2026-11-17 · 15.2 · (rama feat/fase-15-policy-brief) Policy brief para Agrocalidad y Ministerio de Producción. src/policy_brief.py (etapa policy_brief, 15 etapas): todas las cifras desde gold; un solo contenido → docs/policy_brief.md y docs/policy_brief.pdf (2 páginas A4 con matplotlib, sin librerías nuevas); gráficos docs/img/brief_us_share.png y brief_margin.png. Evidencia: EE. UU. 28,7→22,8% en vísceras tras 2025 pero ~30% en valor en 2026; ITS −9,6/+10,2 pp; 7 años de protocolo (CR, BR); margen por kilo −0,16 USD (FOB 1,47 − víscera 1,38 − 0,25). Propuestas: zona libre de PPC (Imbabura, Santo Domingo, Guayas, Carchi = 37% de los cerdos), protocolo GACC con vísceras desde el inicio, serie pública del precio en planta. Pregunta de Carlos sobre el volumen respondida y documentada (docs/recommendation.md, supuesto #53). tests/test_policy_brief.py (5). 207/207 pytest
 - 2026-11-17 · 15.1-v · En el PC: corrida 76: 14/14 etapas OK, 202 passed; disparadores idénticos a los del entorno de Claude (D1 1,14 vs 1,38; D2 1,84 vs 1,47). Fusionado a main
@@ -129,7 +130,7 @@
 - ASPE: el maíz encarece los costos de producción entre 30% y 40% frente a otros mercados → riesgo para el landed cost.
 
 ## Pendientes
-- [ ] Fase 16 (idea de Carlos, 2026-11-16): video animado explicativo para LinkedIn (cadena causa → efecto con los datos reales), además del post
+- [ ] 16.4 (idea de Carlos, 2026-11-16): video animado explicativo para LinkedIn (cadena causa → efecto con los datos reales). Va AL FINAL y se empieza solo cuando Carlos escriba (2026-11-17)
 - [ ] Confirmar en la lista oficial de la OMSA que Ecuador no tiene ninguna zona libre de PPC
 - [ ] Obtener el calendario oficial de desgravación (anexo del acuerdo, MPCEIP) para 0203/0206/0210 → hoy supuesto lineal 15 años
 - [ ] Confirmar si existe un protocolo sanitario de cerdo Ecuador–China (no se encontró ninguno firmado)
