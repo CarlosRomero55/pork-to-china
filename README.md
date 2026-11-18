@@ -110,7 +110,10 @@ Requirements: Windows, Python 3.12+, MySQL 8, a free [UN Comtrade API key](https
 .\pipeline.ps1     # the 15 stages above
 .\dashboard.ps1    # Streamlit dashboard
 .\api.ps1          # FastAPI docs at http://127.0.0.1:8000/docs
+.\snapshot.ps1     # public Parquet copy of gold for the online dashboard
 ```
+
+**Online dashboard.** The published app (Streamlit Community Cloud) has no MySQL: it reads `data/snapshot/`, a Parquet copy of the 23 gold tables and views the dashboard uses, with DuckDB running the **same SQL** ([`src/gold_source.py`](src/gold_source.py)). The copy is refreshed by re-running `.\snapshot.ps1` after the pipeline and pushing it; `tests/test_snapshot.py` checks every query and page against it. Setup steps: [`docs/tablero_en_linea.md`](docs/tablero_en_linea.md).
 
 ## Repository layout
 

@@ -4,17 +4,16 @@ simulation.py · Simulador What-If compartido (Fase 11–12)
 Una sola implementación para la API (POST /simulate) y para el tablero de Streamlit: recalcula el VAN,
 la TIR y el payback de un escenario cambiando supuestos, con las mismas funciones del pipeline
 (src/scenarios.py para el volumen y src/finance.py para el flujo de caja). No escribe nada en la base.
-Lee solo de pork_gold con el usuario de solo lectura (pork_bi).
+Lee solo de pork_gold (MySQL con el usuario de solo lectura pork_bi, o la copia en Parquet: src/gold_source.py).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from functools import lru_cache
 
-from sqlalchemy import text
+import pandas as pd
 
 from src import finance as fi
-from src.db import get_engine
+from src import gold_source
 from src.scenarios import ramp_share, volume
 
 GOLD = "pork_gold"
@@ -51,26 +50,20 @@ class SimulationResult:
     assumptions_used: dict[str, float] = field(default_factory=dict)
 
 
-@lru_cache(maxsize=1)
-def _engine():
-    return get_engine("bi")
-
-
 def load(code: str) -> ScenarioInputs:
-    """Lee de gold todo lo que necesita la simulación de un escenario."""
-    with _engine().connect() as c:
-        row = c.execute(text(f"SELECT scenario_key, cert_year FROM {GOLD}.dim_scenario WHERE code = :c"),
-                        {"c": code}).first()
-        if row is None:
-            raise UnknownScenario(code)
-        key, cert = row
-        params = {n: float(v) for n, v in c.execute(text(
-            f"SELECT name, value FROM {GOLD}.v_scenario_params WHERE scenario_key = :k"), {"k": key})}
-        caps = tuple(float(v) for (v,) in c.execute(text(
-            f"SELECT som_cap_t FROM {GOLD}.fact_scenario_market WHERE scenario_key = :k ORDER BY year_n"), {"k": key}))
-        base = float(c.execute(text(f"SELECT npv_usd FROM {GOLD}.fact_scenario_result WHERE scenario_key = :k"),
-                               {"k": key}).scalar())
-    return ScenarioInputs(code, None if cert is None else int(cert), params, caps, base)
+    """Lee de gold todo lo que necesita la simulación de un escenario (MySQL o copia en Parquet: gold_source)."""
+    row = gold_source.read(f"SELECT scenario_key, cert_year FROM {GOLD}.dim_scenario WHERE code = :c", c=code)
+    if row.empty:
+        raise UnknownScenario(code)
+    key = int(row["scenario_key"].iloc[0])
+    cert = row["cert_year"].iloc[0]
+    params = {str(n): float(v) for n, v in gold_source.read(
+        f"SELECT name, value FROM {GOLD}.v_scenario_params WHERE scenario_key = :k", k=key).itertuples(index=False)}
+    caps = tuple(float(v) for v in gold_source.read(
+        f"SELECT som_cap_t FROM {GOLD}.fact_scenario_market WHERE scenario_key = :k ORDER BY year_n", k=key)["som_cap_t"])
+    base = float(gold_source.read(
+        f"SELECT npv_usd FROM {GOLD}.fact_scenario_result WHERE scenario_key = :k", k=key)["npv_usd"].iloc[0])
+    return ScenarioInputs(code, None if pd.isna(cert) else int(cert), params, caps, base)
 
 
 def run(inp: ScenarioInputs, capex_factor: float = 1.0, **overrides: float | None) -> SimulationResult:
