@@ -6,7 +6,7 @@ Uso en el PC (lo llama db_setup.ps1):
 
 Qué hace:
   1. Pide (oculto) la contraseña de root de MySQL y las contraseñas nuevas
-     para los usuarios pork_etl (pipeline) y pork_bi (Power BI / API, solo lectura).
+     para los usuarios pork_etl (pipeline) y pork_bi (tablero / API, solo lectura).
   2. Ejecuta sql/01_bronze.sql, 02_silver.sql, 03_gold.sql y sql/seed/*.sql.
   3. Crea los usuarios con mínimo privilegio y escribe DB_USER/DB_PASSWORD en .env.
   4. Verifica: conteo de tablas, filas sembradas, SCD2 sin solapes y el arancel

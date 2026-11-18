@@ -15,7 +15,7 @@
 - Dedicación: más de 15 h/semana (ritmo intensivo)
 - Python 3.14.4 en el PC (Windows); MySQL 8 instalado
 - Quiere que Claude haga todo el trabajo
-- Pendiente de respuesta: entrevistas con gente del sector, licencia de Power BI, RAM, idioma del README (por ahora: inglés + resumen en español)
+- Pendiente de respuesta: entrevistas con gente del sector. Power BI descartado del proyecto (Carlos, 2026-11-17); README en inglés + resumen en español
 
 ## Bitácora (una línea por paso)
 - 2026-11-13 · 0.1 · Verificadas las cifras del contexto con fuente y fecha → `docs/assumptions.md`
@@ -26,7 +26,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
-- 2026-11-17 · 16.1 · (rama feat/fase-16-readme) Decisiones de la Fase 16: README en inglés + resumen en español; scrollytelling dentro del portafolio web; video al final, cuando Carlos lo pida. README final: respuesta corta, 4 hallazgos con cifras, galería de las 9 páginas, diagrama de arquitectura (Mermaid), pipeline de 15 etapas, métodos, cómo correrlo, estructura, limitaciones. Power BI quitado del stack (no hay informe; ADR-007). tests/test_readme.py (3): cifras clave del README = gold y enlaces existen. 210/210 pytest
+- 2026-11-17 · 16.1 · (rama feat/fase-16-readme) Decisiones de la Fase 16: README en inglés + resumen en español; scrollytelling dentro del portafolio web; video al final, cuando Carlos lo pida. README final: respuesta corta, 4 hallazgos con cifras, galería de las 9 páginas, diagrama de arquitectura (Mermaid), pipeline de 15 etapas, métodos, cómo correrlo, estructura, limitaciones. Power BI fuera del proyecto por decisión de Carlos: quitado del stack, carpeta powerbi/ eliminada del repo y menciones actualizadas (los ADR se dejan como registro histórico; ADR-007 ya decía Streamlit). tests/test_readme.py (3): cifras clave del README = gold y enlaces existen. 210/210 pytest
 - 2026-11-17 · 15.2-v · En el PC: corrida 81: 15/15 etapas OK, 207 passed; brief de 2 páginas con las mismas cifras (margen −0,16; 24 de 24 VAN negativos). Fusionado a main. FASE 15 CERRADA
 - 2026-11-17 · 15.2 · (rama feat/fase-15-policy-brief) Policy brief para Agrocalidad y Ministerio de Producción. src/policy_brief.py (etapa policy_brief, 15 etapas): todas las cifras desde gold; un solo contenido → docs/policy_brief.md y docs/policy_brief.pdf (2 páginas A4 con matplotlib, sin librerías nuevas); gráficos docs/img/brief_us_share.png y brief_margin.png. Evidencia: EE. UU. 28,7→22,8% en vísceras tras 2025 pero ~30% en valor en 2026; ITS −9,6/+10,2 pp; 7 años de protocolo (CR, BR); margen por kilo −0,16 USD (FOB 1,47 − víscera 1,38 − 0,25). Propuestas: zona libre de PPC (Imbabura, Santo Domingo, Guayas, Carchi = 37% de los cerdos), protocolo GACC con vísceras desde el inicio, serie pública del precio en planta. Pregunta de Carlos sobre el volumen respondida y documentada (docs/recommendation.md, supuesto #53). tests/test_policy_brief.py (5). 207/207 pytest
 - 2026-11-17 · 15.1-v · En el PC: corrida 76: 14/14 etapas OK, 202 passed; disparadores idénticos a los del entorno de Claude (D1 1,14 vs 1,38; D2 1,84 vs 1,47). Fusionado a main
@@ -137,7 +137,7 @@
 - [x] Discrepancia del arancel a EE. UU. resuelta: 57% fue may–nov 2025; vigente 47%
 - [x] NMF de China por línea HS verificado (migración 004)
 - [ ] Tasas antidumping por empresa (lista MOFCOM) → hoy solo mín/máx de muestreadas
-- [ ] Respuestas pendientes de Carlos (entrevistas, Power BI, RAM, idioma del README)
+- [x] Respuestas de Carlos: Power BI fuera del proyecto, README en inglés + español (2026-11-17); entrevista sigue pendiente
 - [ ] Preguntas de entrevista de cierre de la Fase 0 (opcionales)
 - [ ] ADR-003, ADR-004 y ADR-005
 - [ ] Verificar por qué Ecuador 2025 no figura en getDa y si el envío a Costa de Marfil 2023 salió por HS 1602
