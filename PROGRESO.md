@@ -3,7 +3,7 @@
 ## Estado actual
 - **Capa:** 1 (MVP publicable)
 - **Fase:** 16 en curso (cierre y difusión). Orden acordado (Carlos, 2026-11-17): 16.1 README → 16.2 posts de LinkedIn → 16.3 scrollytelling en su portafolio web → 16.4 video animado AL FINAL, solo cuando Carlos lo pida
-- **Paso:** 16.1 cerrado y fusionado a main. Siguiente: 16.2 posts de LinkedIn
+- **Paso:** 16.2 borradores de LinkedIn listos (docs/linkedin_posts.md). Siguiente: 16.3 scrollytelling en el portafolio web. Carlos (2026-11-17): hacer hasta 16.3 ahora; 16.4 (video) en el futuro
 - **Decisiones de la Fase 10 (Carlos, 2026-11-16):** volumen base AgroPorc 5.000 t/año de vísceras congeladas; inversión con fuentes públicas marcada como supuesto; tasa de descuento 12% (rango 10–15% en el simulador)
 - **Git:** desde la Fase 8, una rama por paso y fusión a main con --no-ff tras verificar; etiqueta por fase (docs/git-workflow.md). v0.7.0 = Fase 7 cerrada
 - **Repositorio:** https://github.com/CarlosRomero55/pork-to-china (rama main). Commits a nombre de Carlos Romero, sin coautor; Claude los sube desde su entorno.
@@ -26,6 +26,7 @@
 - 2026-11-13 · 1.2 · setup.ps1 OK en el PC (Py 3.14.4); faltaba DB_USER/DB_PASSWORD (los llena db_setup)
 - 2026-11-13 · 2.1 · Diagrama ER aprobado (bronze genérico, silver 3FN, gold estrella + fact_scenario_result) → docs/er_diagram.md
 - 2026-11-13 · 4.2 · Primera extracción real OK: 4.999 registros. China 2018–2024 completo (12/12 meses); top proveedores ESP, FRA, USA, CHL, CAN (Chile en top 4 → competidor directo y benchmark). Ecuador: solo 2024-09 a Vietnam (= envío piloto de Pronaca, valida los datos); Costa de Marfil 2023 no aparece (revisar HS 1602 en Fase 5). HUECO: China 2025–2026 = 0 registros en Comtrade
+- 2026-11-17 · 16.2 · (rama feat/fase-16-linkedin) docs/linkedin_posts.md: post principal (la historia completa) + 3 seguimientos (volumen y margen por kilo; la ventana que se cierra, ITS; arquitectura para reclutadores técnicos). Cifras de la corrida 86
 - 2026-11-17 · 16.1-v · En el PC: corrida 86: 15/15 etapas OK, 210 passed. README publicado en GitHub. Fusionado a main
 - 2026-11-17 · 16.1 · (rama feat/fase-16-readme) Decisiones de la Fase 16: README en inglés + resumen en español; scrollytelling dentro del portafolio web; video al final, cuando Carlos lo pida. README final: respuesta corta, 4 hallazgos con cifras, galería de las 9 páginas, diagrama de arquitectura (Mermaid), pipeline de 15 etapas, métodos, cómo correrlo, estructura, limitaciones. Power BI fuera del proyecto por decisión de Carlos: quitado del stack, carpeta powerbi/ eliminada del repo y menciones actualizadas (los ADR se dejan como registro histórico; ADR-007 ya decía Streamlit). tests/test_readme.py (3): cifras clave del README = gold y enlaces existen. 210/210 pytest
 - 2026-11-17 · 15.2-v · En el PC: corrida 81: 15/15 etapas OK, 207 passed; brief de 2 páginas con las mismas cifras (margen −0,16; 24 de 24 VAN negativos). Fusionado a main. FASE 15 CERRADA
