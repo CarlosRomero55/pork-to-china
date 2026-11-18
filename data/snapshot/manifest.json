@@ -1,0 +1,33 @@
+{
+  "exported_at": "2026-11-18T17:29:59+00:00",
+  "pipeline_run": {
+    "run_id": 86,
+    "finished_at": "2026-11-17 20:26:26.791000",
+    "status": "ok"
+  },
+  "rows": {
+    "dim_country": 48,
+    "dim_product": 12,
+    "dim_scenario": 24,
+    "fact_china_imports": 10488,
+    "fact_landed_cost": 336,
+    "fact_scenario_result": 24,
+    "fact_scenario_cashflow": 264,
+    "fact_scenario_market": 240,
+    "fact_its_series": 420,
+    "fact_its_coef": 52,
+    "fact_mc_summary": 24,
+    "fact_mc_hist": 960,
+    "fact_mc_tornado": 288,
+    "fact_trigger": 5,
+    "v_scenario_params": 552,
+    "v_last_pipeline_run": 1,
+    "v_dash_china_balance": 10,
+    "v_dash_sam_yearly": 9,
+    "v_dash_supplier_monthly": 6067,
+    "v_dash_province_pigs": 23,
+    "v_dash_sanitary": 3,
+    "v_dash_access_benchmark": 4,
+    "v_dash_policy_events": 30
+  }
+}
